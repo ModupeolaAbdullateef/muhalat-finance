@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Muhalat Finance | Fixed Income Calculator</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --gold:        #d97706;
+      --gold-dark:   #b45309;
+      --gold-light:  #fef3c7;
+      --gold-mid:    #fbbf24;
+      --navy:        #0f2137;
+      --navy-mid:    #1a3250;
+      --blue-soft:   #2a4a6b;
+      --text:        #1a2634;
+      --muted:       #6b7c93;
+      --border:      #d6e4f0;
+      --bg:          #f8f7f4;
+      --card:        #ffffff;
+      --radius:      14px;
+      --shadow:      0 4px 24px rgba(15,33,55,.08);
+      --transition:  .2s ease;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ─── Nav ─── */
+    nav {
+      background: var(--navy);
+      padding: 0 28px;
+      display: flex;
+      align-items: center;
+      gap: 0;
+      height: 52px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 12px rgba(0,0,0,.25);
+    }
+    .nav-logo {
+      font-size: .85rem;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -.01em;
+      margin-right: auto;
+      text-decoration: none;
+    }
+    .nav-logo span { color: var(--gold-mid); }
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 14px;
+      height: 100%;
+      font-size: .8rem;
+      font-weight: 600;
+      color: rgba(255,255,255,.6);
+      text-decoration: none;
+      border-bottom: 2px solid transparent;
+      transition: color .15s, border-color .15s;
+    }
+    .nav-link:hover { color: #fff; }
+    .nav-link.active {
+      color: var(--gold-mid);
+      border-bottom-color: var(--gold-mid);
+    }
+
+    /* ─── Header ─── */
+    header {
+      background: linear-gradient(135deg, #1c1200 0%, #3d2800 50%, #5c3d00 100%);
+      color: #fff;
+      padding: 52px 24px 68px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    header::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 70% 50%, rgba(217,119,6,.18) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    header::after {
+      content: '';
+      position: absolute;
+      bottom: -2px; left: 0; right: 0;
+      height: 44px;
+      background: var(--bg);
+      border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+    }
+    .header-badge {
+      display: inline-block;
+      background: rgba(217,119,6,.25);
+      color: var(--gold-mid);
+      font-size: .72rem;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      padding: 4px 14px;
+      border-radius: 20px;
+      border: 1px solid rgba(217,119,6,.4);
+      margin-bottom: 16px;
+    }
+    header h1 {
+      font-size: clamp(1.75rem, 4vw, 2.75rem);
+      font-weight: 800;
+      letter-spacing: -.02em;
+      margin-bottom: 12px;
+    }
+    header p {
+      font-size: 1rem;
+      color: rgba(255,255,255,.65);
+      max-width: 500px;
+      margin: 0 auto;
+      line-height: 1.65;
+    }
+
+    /* ─── Main ─── */
+    main {
+      max-width: 980px;
+      margin: -20px auto 0;
+      padding: 0 20px 64px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ─── Card ─── */
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 32px;
+    }
+    .card-title {
+      font-size: .68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      color: var(--muted);
+      margin-bottom: 24px;
+    }
+
+    /* ─── Two-column layout ─── */
+    .calc-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+    @media (max-width: 720px) { .calc-grid { grid-template-columns: 1fr; } }
+
+    /* ─── Input Groups ─── */
+    .input-group { margin-bottom: 26px; }
+    .input-group:last-child { margin-bottom: 0; }
+
+    .input-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 9px;
+    }
+    .input-label span {
+      font-size: .88rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .input-label .tip {
+      font-size: .73rem;
+      color: var(--muted);
+      font-weight: 400;
+    }
+
+    /* ─── Field ─── */
+    .field-wrap {
+      display: flex;
+      align-items: center;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      background: #fff;
+      overflow: hidden;
+      transition: border-color var(--transition);
+      margin-bottom: 13px;
+    }
+    .field-wrap:focus-within {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(217,119,6,.14);
+    }
+    .field-prefix {
+      padding: 0 14px;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--gold);
+      background: var(--gold-light);
+      align-self: stretch;
+      display: flex;
+      align-items: center;
+      border-right: 2px solid var(--border);
+      user-select: none;
+    }
+    .field-suffix {
+      padding: 0 14px;
+      font-size: .95rem;
+      font-weight: 700;
+      color: var(--muted);
+      background: #f8fafc;
+      align-self: stretch;
+      display: flex;
+      align-items: center;
+      border-left: 2px solid var(--border);
+      user-select: none;
+    }
+    .field-wrap input[type="text"] {
+      flex: 1;
+      border: none;
+      outline: none;
+      padding: 13px 14px;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text);
+      background: transparent;
+      width: 0;
+    }
+
+    /* ─── Slider ─── */
+    .slider-track {
+      position: relative;
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      margin-top: 2px;
+    }
+    .slider-track .fill {
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      background: linear-gradient(90deg, var(--gold-mid), var(--gold));
+      border-radius: 3px;
+      pointer-events: none;
+    }
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 6px;
+      background: transparent;
+      outline: none;
+      cursor: pointer;
+      position: absolute;
+      top: 0; left: 0;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      background: #fff;
+      border: 3px solid var(--gold);
+      box-shadow: 0 2px 8px rgba(217,119,6,.4);
+      margin-top: -8px;
+      transition: transform .15s, box-shadow .15s;
+    }
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.15);
+      box-shadow: 0 4px 14px rgba(217,119,6,.5);
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      background: #fff;
+      border: 3px solid var(--gold);
+      box-shadow: 0 2px 8px rgba(217,119,6,.4);
+      cursor: pointer;
+    }
+    .slider-labels {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 10px;
+      font-size: .71rem;
+      color: var(--muted);
+    }
+
+    /* ─── Tenor toggle ─── */
+    .tenor-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 13px;
+    }
+    .tenor-btn {
+      padding: 9px 6px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      background: #fff;
+      font-size: .8rem;
+      font-weight: 700;
+      color: var(--muted);
+      cursor: pointer;
+      text-align: center;
+      transition: all .15s;
+    }
+    .tenor-btn:hover { border-color: var(--gold-mid); color: var(--gold); }
+    .tenor-btn.active {
+      border-color: var(--gold);
+      background: var(--gold-light);
+      color: var(--gold-dark);
+    }
+
+    /* ─── Results ─── */
+    .results-header {
+      background: linear-gradient(135deg, #1c1200 0%, #3d2800 100%);
+      border-radius: 12px;
+      padding: 24px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .results-header .rh-label {
+      font-size: .7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: rgba(255,255,255,.5);
+      margin-bottom: 4px;
+    }
+    .results-header .rh-value {
+      font-size: clamp(1.8rem, 4vw, 2.6rem);
+      font-weight: 800;
+      color: var(--gold-mid);
+      letter-spacing: -.03em;
+    }
+    .results-header .rh-sub {
+      font-size: .75rem;
+      color: rgba(255,255,255,.4);
+      margin-top: 4px;
+    }
+
+    .yield-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    @media (max-width: 480px) { .yield-grid { grid-template-columns: 1fr; } }
+
+    .yield-chip {
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      padding: 14px 16px;
+      background: var(--bg);
+    }
+    .yield-chip .yc-label {
+      font-size: .68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .yield-chip .yc-value {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    /* ─── Maturity summary (shows only with tenor) ─── */
+    .maturity-box {
+      border-radius: 12px;
+      border: 2px solid var(--gold-mid);
+      background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+      padding: 20px;
+      display: none;
+    }
+    .maturity-box.visible { display: block; }
+    .maturity-box .mb-title {
+      font-size: .72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .09em;
+      color: var(--gold-dark);
+      margin-bottom: 14px;
+    }
+    .maturity-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 9px 0;
+      border-bottom: 1px solid rgba(217,119,6,.15);
+      font-size: .88rem;
+    }
+    .maturity-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .maturity-row .mr-label { color: var(--muted); font-weight: 500; }
+    .maturity-row .mr-value { font-weight: 700; color: var(--text); }
+    .maturity-row.highlight .mr-value { color: var(--gold-dark); font-size: 1.05rem; }
+
+    /* ─── Instrument Tags ─── */
+    .instrument-section {
+      margin-top: 28px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+    }
+    .instrument-section-title {
+      font-size: .72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+    .instrument-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .instrument-tag {
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: #fff;
+      font-size: .78rem;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all .15s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .instrument-tag:hover { border-color: var(--gold-mid); color: var(--gold-dark); background: var(--gold-light); }
+    .instrument-tag .tag-rate {
+      font-size: .7rem;
+      background: var(--gold-light);
+      color: var(--gold-dark);
+      border-radius: 10px;
+      padding: 1px 7px;
+      font-weight: 700;
+    }
+
+    /* ─── Info banner ─── */
+    .info-banner {
+      background: linear-gradient(135deg, var(--navy) 0%, #1a3e6a 100%);
+      border-radius: var(--radius);
+      padding: 26px 30px;
+      color: #fff;
+      margin-top: 24px;
+      display: flex;
+      gap: 18px;
+      align-items: flex-start;
+    }
+    .info-icon { font-size: 1.8rem; flex-shrink: 0; margin-top: 2px; }
+    .info-banner h3 { font-size: .95rem; font-weight: 700; margin-bottom: 5px; }
+    .info-banner p { font-size: .83rem; color: rgba(255,255,255,.65); line-height: 1.65; }
+
+    /* ─── FAQ ─── */
+    .faq-section { margin-top: 48px; }
+    .faq-section h2 {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: var(--navy);
+      margin-bottom: 22px;
+      text-align: center;
+    }
+    .faq-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px,1fr)); gap: 14px; }
+    .faq-item {
+      background: var(--card);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+    .faq-q {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 18px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: .88rem;
+      color: var(--text);
+      gap: 10px;
+      user-select: none;
+    }
+    .faq-q svg { flex-shrink: 0; transition: transform .25s; color: var(--gold); }
+    .faq-q.open svg { transform: rotate(180deg); }
+    .faq-a {
+      display: none;
+      padding: 14px 18px 16px;
+      font-size: .84rem;
+      color: var(--muted);
+      line-height: 1.7;
+      border-top: 1px solid var(--border);
+    }
+    .faq-a.open { display: block; }
+
+    /* ─── Footer ─── */
+    footer {
+      background: var(--navy);
+      color: rgba(255,255,255,.45);
+      text-align: center;
+      padding: 26px;
+      font-size: .78rem;
+      margin-top: 48px;
+    }
+    footer strong { color: #fff; }
+    footer a { color: var(--gold-mid); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    @media (max-width: 600px) {
+      header { padding: 40px 20px 58px; }
+      .card { padding: 20px; }
+      .info-banner { flex-direction: column; gap: 12px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a class="nav-logo" href="index.html">Muhalat <span>Finance</span></a>
+  <a class="nav-link" href="index.html">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    Investment Calculator
+  </a>
+  <a class="nav-link active" href="fixed-income.html">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+    Fixed Income
+  </a>
+</nav>
+
+<!-- HEADER -->
+<header>
+  <div class="header-badge">Muhalat Finance</div>
+  <h1>Muhalat Fixed Income Calculator</h1>
+  <p>Calculate the annual and monthly interest yield on any fixed principal at a given rate — no compounding, no projections, just your income.</p>
+</header>
+
+<!-- MAIN -->
+<main>
+
+  <div class="calc-grid">
+
+    <!-- LEFT: Inputs -->
+    <div class="card">
+      <p class="card-title">Your Fixed Deposit Details</p>
+
+      <!-- Principal -->
+      <div class="input-group">
+        <div class="input-label">
+          <span>Principal Amount</span>
+          <span class="tip">Amount deposited</span>
+        </div>
+        <div class="field-wrap">
+          <span class="field-prefix">₦</span>
+          <input type="text" id="principalInput" value="5,000,000" autocomplete="off" />
+        </div>
+        <div class="slider-track">
+          <div class="fill" id="principalFill"></div>
+          <input type="range" id="principalSlider" min="0" max="500000000" step="100000" value="5000000" />
+        </div>
+        <div class="slider-labels"><span>₦0</span><span>₦500M+</span></div>
+      </div>
+
+      <!-- Rate -->
+      <div class="input-group">
+        <div class="input-label">
+          <span>Annual Interest Rate</span>
+          <span class="tip">Fixed rate per year</span>
+        </div>
+        <div class="field-wrap">
+          <input type="text" id="rateInput" value="18" autocomplete="off" style="padding-left:18px;" />
+          <span class="field-suffix">% p.a.</span>
+        </div>
+        <div class="slider-track">
+          <div class="fill" id="rateFill"></div>
+          <input type="range" id="rateSlider" min="0.5" max="100" step="0.5" value="18" />
+        </div>
+        <div class="slider-labels"><span>0.5%</span><span>100%+</span></div>
+      </div>
+
+      <!-- Tenor -->
+      <div class="input-group">
+        <div class="input-label">
+          <span>Tenor (optional)</span>
+          <span class="tip">How long you hold it</span>
+        </div>
+        <div class="tenor-row">
+          <button class="tenor-btn" data-unit="days">Days</button>
+          <button class="tenor-btn" data-unit="months">Months</button>
+          <button class="tenor-btn active" data-unit="years">Years</button>
+        </div>
+        <div class="field-wrap">
+          <input type="text" id="tenorInput" value="1" autocomplete="off" style="padding-left:18px;" />
+          <span class="field-suffix" id="tenorSuffix">yrs</span>
+        </div>
+        <div class="slider-track">
+          <div class="fill" id="tenorFill"></div>
+          <input type="range" id="tenorSlider" min="1" max="10" step="1" value="1" />
+        </div>
+        <div class="slider-labels">
+          <span>1</span>
+          <span id="tenorSliderMax">10 yrs</span>
+        </div>
+      </div>
+
+      <!-- Quick-pick instruments -->
+      <div class="instrument-section">
+        <p class="instrument-section-title">Quick-pick Nigerian Instruments</p>
+        <div class="instrument-tags">
+          <div class="instrument-tag" data-rate="22">Treasury Bill <span class="tag-rate">~22%</span></div>
+          <div class="instrument-tag" data-rate="19">FGN Bond <span class="tag-rate">~19%</span></div>
+          <div class="instrument-tag" data-rate="21">Money Market <span class="tag-rate">~21%</span></div>
+          <div class="instrument-tag" data-rate="15">Fixed Deposit <span class="tag-rate">~15%</span></div>
+          <div class="instrument-tag" data-rate="18">Commercial Paper <span class="tag-rate">~18%</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Results -->
+    <div class="card">
+      <p class="card-title">Your Income Breakdown</p>
+
+      <div class="results-header">
+        <div class="rh-label">Annual Interest Income</div>
+        <div class="rh-value" id="annualYield">₦0</div>
+        <div class="rh-sub">before tax, at stated rate</div>
+      </div>
+
+      <div class="yield-grid">
+        <div class="yield-chip">
+          <div class="yc-label">Monthly</div>
+          <div class="yc-value" id="monthlyYield">₦0</div>
+        </div>
+        <div class="yield-chip">
+          <div class="yc-label">Quarterly</div>
+          <div class="yc-value" id="quarterlyYield">₦0</div>
+        </div>
+        <div class="yield-chip">
+          <div class="yc-label">Weekly (est.)</div>
+          <div class="yc-value" id="weeklyYield">₦0</div>
+        </div>
+        <div class="yield-chip">
+          <div class="yc-label">Daily (est.)</div>
+          <div class="yc-value" id="dailyYield">₦0</div>
+        </div>
+      </div>
+
+      <!-- Maturity summary (appears when tenor > 0) -->
+      <div class="maturity-box" id="maturityBox">
+        <div class="mb-title">Maturity Summary</div>
+        <div class="maturity-row">
+          <span class="mr-label">Principal</span>
+          <span class="mr-value" id="matPrincipal">—</span>
+        </div>
+        <div class="maturity-row">
+          <span class="mr-label">Total Interest Earned</span>
+          <span class="mr-value" id="matInterest">—</span>
+        </div>
+        <div class="maturity-row">
+          <span class="mr-label">Tenor</span>
+          <span class="mr-value" id="matTenor">—</span>
+        </div>
+        <div class="maturity-row highlight">
+          <span class="mr-label">Maturity Value</span>
+          <span class="mr-value" id="matValue">—</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Info banner -->
+  <div class="info-banner">
+    <div class="info-icon">📌</div>
+    <div>
+      <h3>Simple interest — what this calculates</h3>
+      <p>Fixed income instruments (treasury bills, bonds, fixed deposits) typically pay a flat rate on your principal each year. This calculator uses <strong>simple interest</strong>: Interest = Principal × Rate × Time. There is no reinvestment of interest — the principal stays fixed and interest is paid out at the agreed frequency.</p>
+    </div>
+  </div>
+
+  <!-- FAQ -->
+  <div class="faq-section">
+    <h2>Muhalat Fixed Income — Common Questions</h2>
+    <div class="faq-grid">
+
+      <div class="faq-item">
+        <div class="faq-q">
+          <span>What is a fixed income investment?</span>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="faq-a">A fixed income investment pays a predetermined, regular interest rate on a principal amount for a set period. Examples include treasury bills, FGN bonds, fixed deposits, and commercial papers. Unlike equities, returns are predictable and not tied to market performance.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">
+          <span>What is the difference between a treasury bill and a bond?</span>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="faq-a">Treasury bills (T-bills) are short-term (91, 182, or 364 days) government debt instruments. FGN Bonds are longer-term (2–30 years) and pay semi-annual coupon interest. T-bills are typically discounted at issuance, while bonds pay periodic coupons and return face value at maturity.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">
+          <span>Is interest from fixed income taxed in Nigeria?</span>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="faq-a">Interest income from bank fixed deposits is subject to Withholding Tax (WHT) at 10%. However, returns from FGN bonds and treasury bills are exempt from personal income tax under the Company Income Tax Act and the Personal Income Tax Act. Always confirm with your institution or a tax adviser.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">
+          <span>How does a fixed deposit compare to a money market fund?</span>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="faq-a">A bank fixed deposit locks your money for a set tenor at an agreed rate. A money market fund pools investors' money into short-term instruments (T-bills, commercial papers) and typically offers better rates, higher liquidity, and daily accrual of interest. Money market funds are generally considered low risk but not guaranteed.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">
+          <span>Can I access my money before the tenor ends?</span>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="faq-a">It depends on the instrument. Most bank fixed deposits allow early liquidation with a penalty (often reduced interest). T-bills can be sold in the secondary market before maturity. FGN bonds are tradeable on the NGX. Money market funds typically allow same-day or next-day redemption with no penalty.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">
+          <span>Is fixed income a good hedge against inflation in Nigeria?</span>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="faq-a">Only if rates exceed inflation. When Nigeria's inflation is running above 25%, a fixed deposit at 15% gives you a negative real return. T-bills and money market funds at 20–22% get you closer to break-even. For a true inflation hedge, consider combining fixed income with equity or real assets.</div>
+      </div>
+
+    </div>
+  </div>
+
+</main>
+
+<!-- FOOTER -->
+<footer>
+  <strong>Muhalat Finance</strong> &nbsp;|&nbsp;
+  <a href="index.html">Investment Calculator</a> &nbsp;·&nbsp;
+  Fixed Income Calculator &nbsp;|&nbsp;
+  For illustrative purposes only. Not financial advice.
+  <br/><br/>© Copyright Muhalat Finance 2026. All rights reserved.
+</footer>
+
+<script>
+  // ─── Utilities ───────────────────────────────────────────────────────────────
+  function fmt(n) {
+    if (n >= 1e9) return '₦' + (n / 1e9).toFixed(2) + 'B';
+    if (n >= 1e6) return '₦' + (n / 1e6).toFixed(2) + 'M';
+    if (n >= 1e3) return '₦' + (n / 1e3).toFixed(2) + 'K';
+    return '₦' + n.toFixed(2);
+  }
+  function fmtInput(n) { return Math.round(n).toLocaleString('en-NG'); }
+  function parseVal(s) { return parseFloat(s.replace(/[^0-9.]/g, '')) || 0; }
+
+  function updateFill(slider, fill) {
+    const pct = (slider.value - slider.min) / (slider.max - slider.min) * 100;
+    fill.style.width = pct + '%';
+  }
+
+  // ─── State ───────────────────────────────────────────────────────────────────
+  const state = { principal: 5000000, rate: 18, tenor: 1, tenorUnit: 'years' };
+
+  // ─── DOM ─────────────────────────────────────────────────────────────────────
+  const principalInput  = document.getElementById('principalInput');
+  const principalSlider = document.getElementById('principalSlider');
+  const principalFill   = document.getElementById('principalFill');
+  const rateInput       = document.getElementById('rateInput');
+  const rateSlider      = document.getElementById('rateSlider');
+  const rateFill        = document.getElementById('rateFill');
+  const tenorInput      = document.getElementById('tenorInput');
+  const tenorSlider     = document.getElementById('tenorSlider');
+  const tenorFill       = document.getElementById('tenorFill');
+  const tenorSuffix     = document.getElementById('tenorSuffix');
+  const tenorSliderMax  = document.getElementById('tenorSliderMax');
+
+  // ─── Render ──────────────────────────────────────────────────────────────────
+  function render() {
+    const { principal, rate, tenor, tenorUnit } = state;
+    const annualInterest = principal * (rate / 100);
+
+    document.getElementById('annualYield').textContent    = fmt(annualInterest);
+    document.getElementById('monthlyYield').textContent   = fmt(annualInterest / 12);
+    document.getElementById('quarterlyYield').textContent = fmt(annualInterest / 4);
+    document.getElementById('weeklyYield').textContent    = fmt(annualInterest / 52);
+    document.getElementById('dailyYield').textContent     = fmt(annualInterest / 365);
+
+    // Tenor → years conversion
+    let tenorInYears = 0;
+    if      (tenorUnit === 'years')  tenorInYears = tenor;
+    else if (tenorUnit === 'months') tenorInYears = tenor / 12;
+    else if (tenorUnit === 'days')   tenorInYears = tenor / 365;
+
+    const totalInterest  = annualInterest * tenorInYears;
+    const maturityValue  = principal + totalInterest;
+
+    // Maturity box
+    const box = document.getElementById('maturityBox');
+    box.classList.toggle('visible', tenor > 0 && tenorInYears > 0);
+
+    let tenorLabel = '';
+    if (tenorUnit === 'years')  tenorLabel = tenor + (tenor === 1 ? ' year' : ' years');
+    if (tenorUnit === 'months') tenorLabel = tenor + (tenor === 1 ? ' month' : ' months');
+    if (tenorUnit === 'days')   tenorLabel = tenor + (tenor === 1 ? ' day' : ' days');
+
+    document.getElementById('matPrincipal').textContent = fmt(principal);
+    document.getElementById('matInterest').textContent  = fmt(totalInterest);
+    document.getElementById('matTenor').textContent     = tenorLabel;
+    document.getElementById('matValue').textContent     = fmt(maturityValue);
+  }
+
+  // ─── Slider wiring ───────────────────────────────────────────────────────────
+  function wire(slider, fill, input, key, isFloat, noUpperClamp) {
+    slider.addEventListener('input', () => {
+      const v = parseFloat(slider.value);
+      state[key] = v;
+      input.value = isFloat ? v : fmtInput(v);
+      updateFill(slider, fill);
+      render();
+    });
+    input.addEventListener('input', () => {
+      const raw = parseVal(input.value);
+      const min  = parseFloat(slider.min);
+      const max  = parseFloat(slider.max);
+      const sv   = noUpperClamp ? Math.max(raw, min) : Math.min(Math.max(raw, min), max);
+      state[key] = sv;
+      slider.value = Math.min(sv, max);
+      updateFill(slider, fill);
+      render();
+    });
+    input.addEventListener('blur', () => {
+      if (!isFloat) input.value = fmtInput(state[key]);
+      else input.value = state[key];
+    });
+    updateFill(slider, fill);
+  }
+
+  wire(principalSlider, principalFill, principalInput, 'principal', false, true);
+  wire(rateSlider,      rateFill,      rateInput,      'rate',      true,  true);
+  wire(tenorSlider,     tenorFill,     tenorInput,     'tenor',     false, false);
+
+  // ─── Tenor unit buttons ───────────────────────────────────────────────────────
+  const tenorConfig = {
+    days:   { min: 1, max: 365, step: 1,  suffix: 'days', maxLabel: '365 days', default: 91 },
+    months: { min: 1, max: 36,  step: 1,  suffix: 'mos',  maxLabel: '36 mos',   default: 6  },
+    years:  { min: 1, max: 10,  step: 1,  suffix: 'yrs',  maxLabel: '10 yrs',   default: 1  },
+  };
+
+  document.querySelectorAll('.tenor-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tenor-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const unit = btn.dataset.unit;
+      state.tenorUnit = unit;
+      const cfg = tenorConfig[unit];
+      tenorSlider.min   = cfg.min;
+      tenorSlider.max   = cfg.max;
+      tenorSlider.step  = cfg.step;
+      state.tenor       = cfg.default;
+      tenorSlider.value = cfg.default;
+      tenorInput.value  = cfg.default;
+      tenorSuffix.textContent    = cfg.suffix;
+      tenorSliderMax.textContent = cfg.maxLabel;
+      updateFill(tenorSlider, tenorFill);
+      render();
+    });
+  });
+
+  // ─── Quick-pick instrument tags ───────────────────────────────────────────────
+  document.querySelectorAll('.instrument-tag').forEach(tag => {
+    tag.addEventListener('click', () => {
+      const r = parseFloat(tag.dataset.rate);
+      state.rate        = r;
+      rateInput.value   = r;
+      rateSlider.value  = Math.min(r, parseFloat(rateSlider.max));
+      updateFill(rateSlider, rateFill);
+      render();
+    });
+  });
+
+  // ─── FAQ accordion ───────────────────────────────────────────────────────────
+  document.querySelectorAll('.faq-q').forEach(q => {
+    q.addEventListener('click', () => {
+      q.classList.toggle('open');
+      q.nextElementSibling.classList.toggle('open');
+    });
+  });
+
+  // ─── Init ────────────────────────────────────────────────────────────────────
+  updateFill(principalSlider, principalFill);
+  updateFill(rateSlider, rateFill);
+  updateFill(tenorSlider, tenorFill);
+  render();
+</script>
+</body>
+</html>

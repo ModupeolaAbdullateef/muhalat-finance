@@ -1,0 +1,1550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Muhalat Finance | Investment Calculator</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    /* ─── Reset & Base ─── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green:       #1dbf73;
+      --green-dark:  #17a362;
+      --green-light: #e8faf2;
+      --navy:        #0f2137;
+      --navy-mid:    #1a3250;
+      --blue-soft:   #2a4a6b;
+      --text:        #1a2634;
+      --muted:       #6b7c93;
+      --border:      #d6e4f0;
+      --bg:          #f4f8fc;
+      --card:        #ffffff;
+      --radius:      14px;
+      --shadow:      0 4px 24px rgba(15,33,55,.08);
+      --shadow-lg:   0 12px 48px rgba(15,33,55,.14);
+      --transition:  .2s ease;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ─── Header ─── */
+    header {
+      background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 60%, var(--blue-soft) 100%);
+      color: #fff;
+      padding: 48px 24px 64px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    header::after {
+      content: '';
+      position: absolute;
+      bottom: -2px; left: 0; right: 0;
+      height: 40px;
+      background: var(--bg);
+      border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+    }
+    .header-badge {
+      display: inline-block;
+      background: rgba(29,191,115,.25);
+      color: var(--green);
+      font-size: .75rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      padding: 4px 14px;
+      border-radius: 20px;
+      border: 1px solid rgba(29,191,115,.4);
+      margin-bottom: 16px;
+    }
+    header h1 {
+      font-size: clamp(1.75rem, 4vw, 2.75rem);
+      font-weight: 800;
+      letter-spacing: -.02em;
+      margin-bottom: 12px;
+    }
+    header p {
+      font-size: 1.05rem;
+      color: rgba(255,255,255,.7);
+      max-width: 520px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    /* ─── Main Layout ─── */
+    main {
+      max-width: 1140px;
+      margin: -20px auto 0;
+      padding: 0 20px 60px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .calculator-grid {
+      display: grid;
+      grid-template-columns: 400px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    @media (max-width: 860px) {
+      .calculator-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ─── Cards ─── */
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 28px;
+    }
+
+    .card-title {
+      font-size: .7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: var(--muted);
+      margin-bottom: 20px;
+    }
+
+    /* ─── Input Groups ─── */
+    .input-group {
+      margin-bottom: 28px;
+    }
+    .input-group:last-child { margin-bottom: 0; }
+
+    .input-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .input-label span {
+      font-size: .9rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .input-label .tip {
+      font-size: .75rem;
+      color: var(--muted);
+      font-weight: 400;
+    }
+
+    /* ─── Money Input with ₦ prefix ─── */
+    .field-wrap {
+      display: flex;
+      align-items: center;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      background: #fff;
+      overflow: hidden;
+      transition: border-color var(--transition);
+      margin-bottom: 14px;
+    }
+    .field-wrap:focus-within {
+      border-color: var(--green);
+      box-shadow: 0 0 0 3px rgba(29,191,115,.15);
+    }
+    .field-prefix {
+      padding: 0 14px;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--green);
+      background: var(--green-light);
+      align-self: stretch;
+      display: flex;
+      align-items: center;
+      border-right: 2px solid var(--border);
+      user-select: none;
+    }
+    .field-suffix {
+      padding: 0 14px;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--muted);
+      background: #f8fafc;
+      align-self: stretch;
+      display: flex;
+      align-items: center;
+      border-left: 2px solid var(--border);
+      user-select: none;
+    }
+    .field-wrap input[type="text"],
+    .field-wrap input[type="number"] {
+      flex: 1;
+      border: none;
+      outline: none;
+      padding: 13px 14px;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text);
+      background: transparent;
+      width: 0;
+    }
+
+    /* ─── Range Slider ─── */
+    .slider-track {
+      position: relative;
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      margin-top: 4px;
+    }
+    .slider-track .fill {
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      background: linear-gradient(90deg, var(--green), var(--green-dark));
+      border-radius: 3px;
+      pointer-events: none;
+    }
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 6px;
+      background: transparent;
+      outline: none;
+      cursor: pointer;
+      position: absolute;
+      top: 0; left: 0;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      background: #fff;
+      border: 3px solid var(--green);
+      box-shadow: 0 2px 8px rgba(29,191,115,.4);
+      margin-top: -8px;
+      transition: transform .15s, box-shadow .15s;
+    }
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.15);
+      box-shadow: 0 4px 14px rgba(29,191,115,.5);
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      background: #fff;
+      border: 3px solid var(--green);
+      box-shadow: 0 2px 8px rgba(29,191,115,.4);
+      cursor: pointer;
+    }
+    .slider-labels {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 10px;
+      font-size: .72rem;
+      color: var(--muted);
+    }
+
+    /* ─── Compound Select ─── */
+    .select-wrap {
+      position: relative;
+    }
+    .select-wrap select {
+      width: 100%;
+      padding: 13px 40px 13px 14px;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      font-size: .95rem;
+      font-weight: 600;
+      color: var(--text);
+      background: #fff;
+      appearance: none;
+      cursor: pointer;
+      outline: none;
+      transition: border-color var(--transition);
+    }
+    .select-wrap select:focus {
+      border-color: var(--green);
+      box-shadow: 0 0 0 3px rgba(29,191,115,.15);
+    }
+    .select-wrap::after {
+      content: '▾';
+      position: absolute;
+      right: 14px; top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      pointer-events: none;
+      font-size: .85rem;
+    }
+
+    /* ─── Results Card ─── */
+    .results-card { position: sticky; top: 20px; }
+
+    .result-headline {
+      text-align: center;
+      padding: 20px 0 24px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+    .result-headline .label {
+      font-size: .78rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      margin-bottom: 6px;
+    }
+    .result-headline .amount {
+      font-size: clamp(2rem, 5vw, 2.8rem);
+      font-weight: 800;
+      color: var(--green);
+      letter-spacing: -.03em;
+    }
+
+    /* ─── Summary Chips ─── */
+    .summary-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+    .summary-chip {
+      background: var(--bg);
+      border-radius: 10px;
+      padding: 14px 16px;
+      border-left: 4px solid transparent;
+    }
+    .summary-chip.invested { border-color: #4f93d4; }
+    .summary-chip.earnings { border-color: var(--green); }
+    .summary-chip .chip-label {
+      font-size: .72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .summary-chip .chip-value {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    /* ─── Chart ─── */
+    .chart-wrap {
+      position: relative;
+      height: 280px;
+      margin-bottom: 24px;
+    }
+
+    /* ─── Legend ─── */
+    .legend {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: .8rem;
+      font-weight: 600;
+      color: var(--muted);
+    }
+    .legend-dot {
+      width: 12px; height: 12px;
+      border-radius: 3px;
+    }
+    .dot-invested { background: #4f93d4; }
+    .dot-earnings { background: var(--green); }
+
+    /* ─── Year Table ─── */
+    .table-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: .85rem;
+      font-weight: 600;
+      color: var(--green);
+      cursor: pointer;
+      border: none;
+      background: none;
+      padding: 0;
+      width: 100%;
+    }
+    .table-toggle:hover { color: var(--green-dark); }
+    .table-toggle svg { transition: transform .25s; }
+    .table-toggle.open svg { transform: rotate(180deg); }
+
+    .year-table-wrap {
+      display: none;
+      margin-top: 16px;
+      max-height: 340px;
+      overflow-y: auto;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+    .year-table-wrap.open { display: block; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .82rem;
+    }
+    thead th {
+      background: var(--navy);
+      color: #fff;
+      padding: 10px 14px;
+      text-align: right;
+      font-size: .72rem;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    thead th:first-child { text-align: left; }
+    tbody tr:nth-child(even) { background: var(--bg); }
+    tbody td {
+      padding: 9px 14px;
+      text-align: right;
+      color: var(--text);
+      font-weight: 500;
+      border-bottom: 1px solid var(--border);
+    }
+    tbody td:first-child { text-align: left; font-weight: 700; }
+
+    /* ─── Info Banner ─── */
+    .info-banner {
+      background: linear-gradient(135deg, var(--navy) 0%, #1a3e6a 100%);
+      border-radius: var(--radius);
+      padding: 28px 32px;
+      color: #fff;
+      margin-top: 24px;
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+    }
+    .info-icon {
+      font-size: 2rem;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .info-banner h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .info-banner p {
+      font-size: .85rem;
+      color: rgba(255,255,255,.7);
+      line-height: 1.6;
+    }
+
+    /* ─── FAQ Section ─── */
+    .faq-section {
+      margin-top: 48px;
+    }
+    .faq-section h2 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--navy);
+      margin-bottom: 24px;
+      text-align: center;
+    }
+    .faq-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 16px;
+    }
+    .faq-item {
+      background: var(--card);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+    .faq-q {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: .9rem;
+      color: var(--text);
+      gap: 12px;
+      user-select: none;
+    }
+    .faq-q svg { flex-shrink: 0; transition: transform .25s; color: var(--green); }
+    .faq-q.open svg { transform: rotate(180deg); }
+    .faq-a {
+      display: none;
+      padding: 0 20px 16px;
+      font-size: .85rem;
+      color: var(--muted);
+      line-height: 1.7;
+      border-top: 1px solid var(--border);
+      padding-top: 14px;
+    }
+    .faq-a.open { display: block; }
+
+    /* ─── Footer ─── */
+    footer {
+      background: var(--navy);
+      color: rgba(255,255,255,.5);
+      text-align: center;
+      padding: 28px;
+      font-size: .8rem;
+      margin-top: 40px;
+    }
+    footer strong { color: #fff; }
+
+    /* ─── Joke Strip ─── */
+    .joke-strip {
+      background: linear-gradient(135deg, #fff8e1 0%, #fffde7 100%);
+      border: 1px solid #ffe082;
+      border-radius: 10px;
+      padding: 12px 16px;
+      margin-bottom: 20px;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .joke-icon { font-size: 1.3rem; flex-shrink: 0; line-height: 1.4; }
+    .joke-body { flex: 1; }
+    .joke-tag {
+      font-size: .65rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: #f59e0b;
+      margin-bottom: 3px;
+    }
+    .joke-text {
+      font-size: .82rem;
+      color: #5a4a1a;
+      line-height: 1.5;
+      font-style: italic;
+    }
+
+    /* ─── Phase Connector ─── */
+    .phase-connector {
+      text-align: center;
+      margin: 36px 0 28px;
+      position: relative;
+    }
+    .phase-connector::before {
+      content: '';
+      position: absolute;
+      top: 50%; left: 0; right: 0;
+      height: 1px;
+      background: var(--border);
+    }
+    .phase-connector-inner {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg);
+      padding: 0 20px;
+      position: relative;
+    }
+    .phase-arrow {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, var(--green), var(--green-dark));
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 1.1rem;
+      box-shadow: 0 4px 14px rgba(29,191,115,.35);
+    }
+    .phase-label {
+      font-size: .7rem;
+      font-weight: 800;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--green);
+    }
+
+    /* ─── Dividend Section ─── */
+    .dividend-header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    .dividend-header .section-badge {
+      display: inline-block;
+      background: rgba(79,147,212,.12);
+      color: #4f93d4;
+      font-size: .72rem;
+      font-weight: 800;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      padding: 4px 14px;
+      border-radius: 20px;
+      border: 1px solid rgba(79,147,212,.3);
+      margin-bottom: 10px;
+    }
+    .dividend-header h2 {
+      font-size: clamp(1.2rem, 3vw, 1.75rem);
+      font-weight: 800;
+      color: var(--navy);
+      letter-spacing: -.02em;
+      margin-bottom: 8px;
+    }
+    .dividend-header p {
+      font-size: .9rem;
+      color: var(--muted);
+      max-width: 540px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    /* ─── Use Portfolio Button ─── */
+    .use-portfolio-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: var(--green-light);
+      color: var(--green-dark);
+      border: 1.5px solid rgba(29,191,115,.4);
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: .8rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background var(--transition), transform var(--transition);
+      margin-bottom: 14px;
+    }
+    .use-portfolio-btn:hover {
+      background: #d0f5e7;
+      transform: translateY(-1px);
+    }
+    .use-portfolio-btn svg { flex-shrink: 0; }
+
+    /* ─── Income Result Cards ─── */
+    .income-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    @media (max-width: 500px) { .income-grid { grid-template-columns: 1fr; } }
+
+    .income-card {
+      border-radius: 12px;
+      padding: 18px 20px;
+      text-align: center;
+      border: 1px solid var(--border);
+      transition: transform .15s, box-shadow .15s;
+    }
+    .income-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+    .income-card.primary {
+      background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%);
+      border: none;
+      grid-column: 1 / -1;
+    }
+    .income-card.primary .ic-label { color: rgba(255,255,255,.6); }
+    .income-card.primary .ic-value { color: var(--green); }
+    .income-card.primary .ic-period { color: rgba(255,255,255,.4); }
+    .income-card .ic-label {
+      font-size: .68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .09em;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .income-card .ic-value {
+      font-size: clamp(1.3rem, 3vw, 1.7rem);
+      font-weight: 800;
+      color: var(--text);
+      letter-spacing: -.02em;
+    }
+    .income-card .ic-period {
+      font-size: .72rem;
+      color: var(--muted);
+      margin-top: 3px;
+    }
+
+    /* ─── Sustainability Meter ─── */
+    .sustain-wrap {
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      padding: 18px 20px;
+      margin-top: 4px;
+    }
+    .sustain-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+    .sustain-title {
+      font-size: .78rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .sustain-badge {
+      font-size: .7rem;
+      font-weight: 800;
+      padding: 3px 10px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+    .sustain-badge.safe    { background: #d1fae5; color: #065f46; }
+    .sustain-badge.caution { background: #fef3c7; color: #92400e; }
+    .sustain-badge.danger  { background: #fee2e2; color: #991b1b; }
+
+    .sustain-bar-track {
+      height: 10px;
+      background: var(--border);
+      border-radius: 5px;
+      overflow: hidden;
+      margin-bottom: 10px;
+    }
+    .sustain-bar-fill {
+      height: 100%;
+      border-radius: 5px;
+      transition: width .4s ease, background .4s ease;
+    }
+    .sustain-note {
+      font-size: .78rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    /* ─── Motivational Quote ─── */
+    .motivational-banner {
+      background: linear-gradient(135deg, #1dbf73 0%, #17a362 50%, #0f7a48 100%);
+      border-radius: var(--radius);
+      padding: 32px 36px;
+      color: #fff;
+      margin-top: 24px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .motivational-banner::before {
+      content: '"';
+      position: absolute;
+      top: -20px; left: 16px;
+      font-size: 10rem;
+      color: rgba(255,255,255,.08);
+      font-family: Georgia, serif;
+      line-height: 1;
+      pointer-events: none;
+    }
+    .motivational-banner .quote-text {
+      font-size: clamp(1rem, 2.5vw, 1.25rem);
+      font-weight: 700;
+      line-height: 1.55;
+      letter-spacing: -.01em;
+      margin-bottom: 12px;
+      position: relative;
+    }
+    .motivational-banner .quote-sub {
+      font-size: .82rem;
+      color: rgba(255,255,255,.7);
+      font-weight: 500;
+    }
+    .motivational-banner .quote-icon {
+      font-size: 2rem;
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    /* ─── Responsive ─── */
+    @media (max-width: 600px) {
+      header { padding: 36px 20px 56px; }
+      .card { padding: 20px; }
+      .summary-row { grid-template-columns: 1fr; }
+      .info-banner { flex-direction: column; gap: 12px; }
+      .motivational-banner { padding: 24px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav style="background:#0f2137;padding:0 28px;display:flex;align-items:center;height:52px;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.25);">
+  <a href="index.html" style="font-size:.85rem;font-weight:800;color:#fff;letter-spacing:-.01em;margin-right:auto;text-decoration:none;">Muhalat <span style="color:#fbbf24;">Finance</span></a>
+  <a href="index.html" style="display:flex;align-items:center;gap:6px;padding:0 14px;height:100%;font-size:.8rem;font-weight:600;color:#fbbf24;text-decoration:none;border-bottom:2px solid #fbbf24;">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    Investment Calculator
+  </a>
+  <a href="fixed-income.html" style="display:flex;align-items:center;gap:6px;padding:0 14px;height:100%;font-size:.8rem;font-weight:600;color:rgba(255,255,255,.6);text-decoration:none;border-bottom:2px solid transparent;">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+    Fixed Income
+  </a>
+</nav>
+
+<!-- HEADER -->
+<header>
+  <div class="header-badge">Muhalat Finance</div>
+  <h1>Muhalat Investment Calculator</h1>
+  <p>See how your money could grow over time with the power of compound interest and consistent contributions.</p>
+</header>
+
+<!-- MAIN -->
+<main>
+  <div class="calculator-grid">
+
+    <!-- LEFT: Inputs -->
+    <div class="card">
+      <p class="card-title">Your Investment Details</p>
+
+      <!-- Initial Investment -->
+      <div class="input-group">
+        <div class="input-label">
+          <span>Initial Investment</span>
+          <span class="tip">Starting amount</span>
+        </div>
+        <div class="field-wrap">
+          <span class="field-prefix">₦</span>
+          <input type="text" id="initialInput" value="500,000" autocomplete="off" />
+        </div>
+        <div class="slider-track">
+          <div class="fill" id="initialFill"></div>
+          <input type="range" id="initialSlider" min="0" max="10000000" step="50000" value="500000" />
+        </div>
+        <div class="slider-labels"><span>₦0</span><span>₦10M</span></div>
+      </div>
+
+      <!-- Monthly Contribution -->
+      <div class="input-group">
+        <div class="input-label">
+          <span>Monthly Contribution</span>
+          <span class="tip">Amount added each month</span>
+        </div>
+        <div class="field-wrap">
+          <span class="field-prefix">₦</span>
+          <input type="text" id="monthlyInput" value="50,000" autocomplete="off" />
+        </div>
+        <div class="slider-track">
+          <div class="fill" id="monthlyFill"></div>
+          <input type="range" id="monthlySlider" min="0" max="1000000" step="5000" value="50000" />
+        </div>
+        <div class="slider-labels"><span>₦0</span><span>₦1M/mo</span></div>
+      </div>
+
+      <!-- Investment Length -->
+      <div class="input-group">
+        <div class="input-label">
+          <span>Investment Length</span>
+          <span class="tip">Number of years</span>
+        </div>
+        <div class="field-wrap">
+          <input type="text" id="yearsInput" value="20" autocomplete="off" style="padding-left:20px;" />
+          <span class="field-suffix">yrs</span>
+        </div>
+        <div class="slider-track">
+          <div class="fill" id="yearsFill"></div>
+          <input type="range" id="yearsSlider" min="1" max="50" step="1" value="20" />
+        </div>
+        <div class="slider-labels"><span>1 yr</span><span>50 yrs</span></div>
+      </div>
+
+      <!-- Rate of Return -->
+      <div class="input-group">
+        <div class="input-label">
+          <span>Estimated Rate of Return</span>
+          <span class="tip">Annual percentage</span>
+        </div>
+        <div class="field-wrap">
+          <input type="text" id="rateInput" value="12" autocomplete="off" style="padding-left:20px;" />
+          <span class="field-suffix">%</span>
+        </div>
+        <div class="slider-track">
+          <div class="fill" id="rateFill"></div>
+          <input type="range" id="rateSlider" min="1" max="100" step="0.5" value="12" />
+        </div>
+        <div class="slider-labels"><span>1%</span><span>100%+</span></div>
+      </div>
+
+      <!-- Compound Frequency -->
+      <div class="input-group">
+        <div class="input-label">
+          <span>Compound Frequency</span>
+        </div>
+        <div class="select-wrap">
+          <select id="compoundSelect">
+            <option value="12">Monthly</option>
+            <option value="4">Quarterly</option>
+            <option value="2">Semi-Annually</option>
+            <option value="1">Annually</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Results -->
+    <div class="card results-card">
+      <!-- Joke of the Day -->
+      <div class="joke-strip">
+        <div class="joke-icon">😄</div>
+        <div class="joke-body">
+          <div class="joke-tag">Financial Joke of the Day</div>
+          <div class="joke-text" id="jokeText">Loading...</div>
+        </div>
+      </div>
+
+      <p class="card-title">Your Estimated Growth</p>
+
+      <div class="result-headline">
+        <div class="label">Total Portfolio Value</div>
+        <div class="amount" id="totalValue">₦0</div>
+      </div>
+
+      <div class="summary-row">
+        <div class="summary-chip invested">
+          <div class="chip-label">Total Invested</div>
+          <div class="chip-value" id="totalInvested">₦0</div>
+        </div>
+        <div class="summary-chip earnings">
+          <div class="chip-label">Total Earnings</div>
+          <div class="chip-value" id="totalEarnings">₦0</div>
+        </div>
+      </div>
+
+      <!-- Chart -->
+      <div class="chart-wrap">
+        <canvas id="growthChart"></canvas>
+      </div>
+
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot dot-invested"></div>Total Invested</div>
+        <div class="legend-item"><div class="legend-dot dot-earnings"></div>Interest Earned</div>
+      </div>
+
+      <!-- Year-by-Year Table Toggle -->
+      <div style="margin-top:20px; padding-top:20px; border-top:1px solid var(--border);">
+        <button class="table-toggle" id="tableToggle">
+          <span>View Year-by-Year Breakdown</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="year-table-wrap" id="yearTableWrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Year</th>
+                <th>Total Invested</th>
+                <th>Interest Earned</th>
+                <th>Portfolio Value</th>
+              </tr>
+            </thead>
+            <tbody id="yearTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phase Connector -->
+  <div class="phase-connector">
+    <div class="phase-connector-inner">
+      <div class="phase-arrow">↓</div>
+      <div class="phase-label">Phase 2 — Live off your wealth</div>
+    </div>
+  </div>
+
+  <!-- Dividend / Income Calculator -->
+  <div class="dividend-header">
+    <div class="section-badge">Dividend &amp; Withdrawal Calculator</div>
+    <h2>How Much Income Will Your Portfolio Pay You?</h2>
+    <p>Enter any portfolio value and a withdrawal or dividend rate to see your annual and monthly income — and whether that rate is sustainable.</p>
+  </div>
+
+  <div class="calculator-grid">
+    <!-- Inputs -->
+    <div class="card">
+      <p class="card-title">Your Portfolio &amp; Rate</p>
+
+      <button class="use-portfolio-btn" id="usePortfolioBtn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.31"/></svg>
+        Use my investment calculator result
+      </button>
+
+      <!-- Portfolio Value -->
+      <div class="input-group">
+        <div class="input-label">
+          <span>Portfolio / Investment Value</span>
+          <span class="tip">Total amount invested</span>
+        </div>
+        <div class="field-wrap">
+          <span class="field-prefix">₦</span>
+          <input type="text" id="divPrincipalInput" value="10,000,000" autocomplete="off" />
+        </div>
+        <div class="slider-track">
+          <div class="fill" id="divPrincipalFill"></div>
+          <input type="range" id="divPrincipalSlider" min="0" max="500000000" step="500000" value="10000000" />
+        </div>
+        <div class="slider-labels"><span>₦0</span><span>₦500M+</span></div>
+      </div>
+
+      <!-- Withdrawal / Dividend Rate -->
+      <div class="input-group">
+        <div class="input-label">
+          <span>Withdrawal / Dividend Rate</span>
+          <span class="tip">Annual % taken out</span>
+        </div>
+        <div class="field-wrap">
+          <input type="text" id="divRateInput" value="4" autocomplete="off" style="padding-left:20px;" />
+          <span class="field-suffix">%</span>
+        </div>
+        <div class="slider-track">
+          <div class="fill" id="divRateFill"></div>
+          <input type="range" id="divRateSlider" min="0.5" max="50" step="0.5" value="4" />
+        </div>
+        <div class="slider-labels"><span>0.5%</span><span>50%+</span></div>
+      </div>
+
+      <!-- Expected Portfolio Growth Rate -->
+      <div class="input-group">
+        <div class="input-label">
+          <span>Expected Annual Growth Rate</span>
+          <span class="tip">Used for sustainability check</span>
+        </div>
+        <div class="field-wrap">
+          <input type="text" id="divGrowthInput" value="12" autocomplete="off" style="padding-left:20px;" />
+          <span class="field-suffix">%</span>
+        </div>
+        <div class="slider-track">
+          <div class="fill" id="divGrowthFill"></div>
+          <input type="range" id="divGrowthSlider" min="0" max="50" step="0.5" value="12" />
+        </div>
+        <div class="slider-labels"><span>0%</span><span>50%+</span></div>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div class="card">
+      <p class="card-title">Your Income Breakdown</p>
+
+      <div class="income-grid">
+        <div class="income-card primary">
+          <div class="ic-label">Annual Dividend / Withdrawal</div>
+          <div class="ic-value" id="divAnnual">₦0</div>
+          <div class="ic-period">per year</div>
+        </div>
+        <div class="income-card">
+          <div class="ic-label">Monthly</div>
+          <div class="ic-value" id="divMonthly">₦0</div>
+          <div class="ic-period">per month</div>
+        </div>
+        <div class="income-card">
+          <div class="ic-label">Quarterly</div>
+          <div class="ic-value" id="divQuarterly">₦0</div>
+          <div class="ic-period">every 3 months</div>
+        </div>
+        <div class="income-card">
+          <div class="ic-label">Weekly (est.)</div>
+          <div class="ic-value" id="divWeekly">₦0</div>
+          <div class="ic-period">per week</div>
+        </div>
+      </div>
+
+      <!-- Sustainability Meter -->
+      <div class="sustain-wrap">
+        <div class="sustain-header">
+          <span class="sustain-title">Portfolio Sustainability</span>
+          <span class="sustain-badge" id="sustainBadge">—</span>
+        </div>
+        <div class="sustain-bar-track">
+          <div class="sustain-bar-fill" id="sustainBar" style="width:0%;"></div>
+        </div>
+        <div class="sustain-note" id="sustainNote">Enter values above to see your sustainability status.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Motivational Quote -->
+  <div class="motivational-banner">
+    <span class="quote-icon">🚀</span>
+    <div class="quote-text" id="motivationalText">Keep pushing. Keep investing. Every naira you plant today is a tree of wealth you'll sit under tomorrow.</div>
+    <div class="quote-sub">Your future self is counting on the decisions you make right now.</div>
+  </div>
+
+  <!-- Info Banner -->
+  <div class="info-banner" style="margin-top:24px;">
+    <div class="info-icon">💡</div>
+    <div>
+      <h3>How compound interest works</h3>
+      <p>Compound interest means you earn returns not just on your original investment, but also on the interest you've already accumulated. Over time, this "interest on interest" effect becomes increasingly powerful — this is why starting early and staying consistent is the greatest investment advantage you have.</p>
+    </div>
+  </div>
+
+  <!-- FAQ -->
+  <div class="faq-section">
+    <h2>Frequently Asked Questions</h2>
+    <div class="faq-grid">
+
+      <div class="faq-item">
+        <div class="faq-q">
+          <span>What is a realistic rate of return in Nigeria?</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="faq-a">Nigerian equities have historically returned 10–18% annually on the NGX. Money market funds average 15–20%, while treasury bills and bonds vary with CBN policy. A conservative estimate of 10–12% is common for long-term planning, though inflation should also be factored in.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">
+          <span>Should I invest a lump sum or monthly contributions?</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="faq-a">Both are powerful strategies. A lump-sum investment gives your money more time to compound, while regular monthly contributions (called naira-cost averaging) reduce the risk of investing at the wrong time. The best approach is often both — invest what you have now and continue adding monthly.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">
+          <span>How much should I invest per month?</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="faq-a">A common guideline is to invest at least 15% of your gross income for retirement. If you're just starting, even ₦10,000–₦20,000 per month makes a meaningful difference over time. The key is consistency — start with what you can and increase as your income grows.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">
+          <span>What investment options are available in Nigeria?</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="faq-a">Popular options include NGX-listed stocks, mutual funds, money market funds, treasury bills, FGN bonds, real estate investment trusts (REITs), and pension fund accounts (RSA) through PFAs. Diversifying across asset classes helps balance risk and reward.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">
+          <span>Does inflation affect my investment returns?</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="faq-a">Yes. With Nigeria's inflation rate often in double digits, your real (inflation-adjusted) return is lower than the nominal figure. For example, a 15% return with 18% inflation gives a negative real return. Aim for investments that consistently outpace inflation over time.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">
+          <span>How does compound frequency affect growth?</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="faq-a">The more frequently interest compounds, the more you earn. Monthly compounding produces slightly more than annual compounding over long periods. For example, ₦1,000,000 at 12% for 20 years compounds to ₦9.85M monthly vs. ₦9.65M annually — a meaningful difference.</div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<!-- FOOTER -->
+<footer>
+  <strong>Muhalat Finance</strong> &nbsp;|&nbsp; All figures are estimates for illustrative purposes only. Past performance is not a guarantee of future results. Consult a qualified financial adviser before making investment decisions.
+  <br/><br/>© Copyright Muhalat Finance 2026. All rights reserved.
+</footer>
+
+<script>
+  // ─── Utility: Format & Parse ───────────────────────────────────────────────
+  function fmt(n) {
+    if (n >= 1e9)  return '₦' + (n / 1e9).toFixed(2) + 'B';
+    if (n >= 1e6)  return '₦' + (n / 1e6).toFixed(2) + 'M';
+    return '₦' + Math.round(n).toLocaleString('en-NG');
+  }
+
+  function fmtInput(n) {
+    return Math.round(n).toLocaleString('en-NG');
+  }
+
+  function parseVal(s) {
+    return parseFloat(s.replace(/[^0-9.]/g, '')) || 0;
+  }
+
+  // ─── State ──────────────────────────────────────────────────────────────────
+  let state = {
+    initial:   500000,
+    monthly:   50000,
+    years:     20,
+    rate:      12,
+    compound:  12
+  };
+
+  // ─── DOM refs ───────────────────────────────────────────────────────────────
+  const els = {
+    initialInput:  document.getElementById('initialInput'),
+    initialSlider: document.getElementById('initialSlider'),
+    initialFill:   document.getElementById('initialFill'),
+    monthlyInput:  document.getElementById('monthlyInput'),
+    monthlySlider: document.getElementById('monthlySlider'),
+    monthlyFill:   document.getElementById('monthlyFill'),
+    yearsInput:    document.getElementById('yearsInput'),
+    yearsSlider:   document.getElementById('yearsSlider'),
+    yearsFill:     document.getElementById('yearsFill'),
+    rateInput:     document.getElementById('rateInput'),
+    rateSlider:    document.getElementById('rateSlider'),
+    rateFill:      document.getElementById('rateFill'),
+    compoundSelect: document.getElementById('compoundSelect'),
+    totalValue:    document.getElementById('totalValue'),
+    totalInvested: document.getElementById('totalInvested'),
+    totalEarnings: document.getElementById('totalEarnings'),
+    yearTableBody: document.getElementById('yearTableBody'),
+    tableToggle:   document.getElementById('tableToggle'),
+    yearTableWrap: document.getElementById('yearTableWrap'),
+  };
+
+  // ─── Slider fill helper ──────────────────────────────────────────────────────
+  function updateFill(slider, fill) {
+    const pct = (slider.value - slider.min) / (slider.max - slider.min) * 100;
+    fill.style.width = pct + '%';
+  }
+
+  // ─── Calculation ─────────────────────────────────────────────────────────────
+  function calculate() {
+    const { initial, monthly, years, rate, compound } = state;
+    const r = rate / 100 / compound;
+    const rows = [];
+
+    let balance  = initial;
+    let invested = initial;
+
+    for (let yr = 1; yr <= years; yr++) {
+      for (let p = 0; p < compound; p++) {
+        balance = balance * (1 + r) + monthly * (12 / compound);
+      }
+      invested += monthly * 12;
+      rows.push({
+        year:     yr,
+        invested: invested,
+        earnings: balance - invested,
+        balance:  balance
+      });
+    }
+
+    return rows;
+  }
+
+  // ─── Chart setup ─────────────────────────────────────────────────────────────
+  const ctx = document.getElementById('growthChart').getContext('2d');
+  const chart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: [],
+      datasets: [
+        {
+          label: 'Total Invested',
+          data: [],
+          backgroundColor: '#4f93d4',
+          borderRadius: { topLeft: 0, topRight: 0, bottomLeft: 4, bottomRight: 4 },
+          borderSkipped: false,
+        },
+        {
+          label: 'Interest Earned',
+          data: [],
+          backgroundColor: '#1dbf73',
+          borderRadius: { topLeft: 4, topRight: 4, bottomLeft: 0, bottomRight: 0 },
+          borderSkipped: false,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#0f2137',
+          titleColor: '#fff',
+          bodyColor: 'rgba(255,255,255,.75)',
+          padding: 12,
+          cornerRadius: 10,
+          callbacks: {
+            label: ctx => ' ' + ctx.dataset.label + ': ' + fmt(ctx.raw)
+          }
+        }
+      },
+      scales: {
+        x: {
+          stacked: true,
+          grid: { display: false },
+          ticks: { font: { size: 11 }, color: '#6b7c93' },
+          border: { display: false }
+        },
+        y: {
+          stacked: true,
+          grid: { color: '#e8eef5', lineWidth: 1 },
+          border: { display: false, dash: [4, 4] },
+          ticks: {
+            font: { size: 11 },
+            color: '#6b7c93',
+            callback: v => fmt(v)
+          }
+        }
+      }
+    }
+  });
+
+  // ─── Render ──────────────────────────────────────────────────────────────────
+  function render() {
+    const rows = calculate();
+    const last = rows[rows.length - 1];
+
+    // Headlines
+    els.totalValue.textContent    = fmt(last.balance);
+    els.totalInvested.textContent = fmt(last.invested);
+    els.totalEarnings.textContent = fmt(last.earnings);
+
+    // Chart — show up to 25 bars (sample every N years if longer)
+    const step = Math.max(1, Math.ceil(rows.length / 25));
+    const visible = rows.filter((_, i) => (i + 1) % step === 0 || i === rows.length - 1);
+
+    chart.data.labels = visible.map(r => 'Yr ' + r.year);
+    chart.data.datasets[0].data = visible.map(r => r.invested);
+    chart.data.datasets[1].data = visible.map(r => r.earnings);
+    chart.update('none');
+
+    // Table
+    els.yearTableBody.innerHTML = rows.map(r => `
+      <tr>
+        <td>Year ${r.year}</td>
+        <td>${fmt(r.invested)}</td>
+        <td>${fmt(r.earnings)}</td>
+        <td>${fmt(r.balance)}</td>
+      </tr>
+    `).join('');
+  }
+
+  // ─── Wire up inputs ───────────────────────────────────────────────────────────
+  // noUpperClamp: state accepts typed values beyond slider.max (slider pegs at max)
+  function wireSliderAndInput(slider, fill, input, key, isFloat, noUpperClamp) {
+    slider.addEventListener('input', () => {
+      const v = parseFloat(slider.value);
+      state[key] = v;
+      input.value = isFloat ? v : fmtInput(v);
+      updateFill(slider, fill);
+      render();
+    });
+    input.addEventListener('input', () => {
+      const raw = parseVal(input.value);
+      const min  = parseFloat(slider.min);
+      const max  = parseFloat(slider.max);
+      const stateVal  = noUpperClamp ? Math.max(raw, min) : Math.min(Math.max(raw, min), max);
+      const sliderVal = Math.min(stateVal, max);
+      state[key]    = stateVal;
+      slider.value  = sliderVal;
+      updateFill(slider, fill);
+      render();
+    });
+    input.addEventListener('blur', () => {
+      if (!isFloat) input.value = fmtInput(state[key]);
+      else input.value = state[key];
+    });
+    updateFill(slider, fill);
+  }
+
+  wireSliderAndInput(els.initialSlider,  els.initialFill,  els.initialInput,  'initial',  false, false);
+  wireSliderAndInput(els.monthlySlider,  els.monthlyFill,  els.monthlyInput,  'monthly',  false, false);
+  wireSliderAndInput(els.yearsSlider,    els.yearsFill,    els.yearsInput,    'years',    false, false);
+  wireSliderAndInput(els.rateSlider,     els.rateFill,     els.rateInput,     'rate',     true,  true);
+
+  els.compoundSelect.addEventListener('change', () => {
+    state.compound = parseInt(els.compoundSelect.value);
+    render();
+  });
+
+  // ─── Table toggle ─────────────────────────────────────────────────────────────
+  els.tableToggle.addEventListener('click', () => {
+    els.tableToggle.classList.toggle('open');
+    els.yearTableWrap.classList.toggle('open');
+  });
+
+  // ─── FAQ accordion ───────────────────────────────────────────────────────────
+  document.querySelectorAll('.faq-q').forEach(q => {
+    q.addEventListener('click', () => {
+      q.classList.toggle('open');
+      q.nextElementSibling.classList.toggle('open');
+    });
+  });
+
+  // ─── Joke & Quote of the Day (rotates daily) ─────────────────────────────────
+  const jokes = [
+    "Why did the investor break up with the bank? Because it kept taking interest in everything but him.",
+    "A banker fell overboard. His colleagues threw him a lifeline — at 18% APR.",
+    "I asked my financial adviser what I should invest in. He said, 'bread and water.' Turns out I was already broke.",
+    "Why did the stock market cross the road? To get to the bull side.",
+    "My accountant told me I had outstanding invoices. I said, 'Thanks, I worked really hard on them.'",
+    "A budget is just a method of worrying before you spend money instead of after.",
+    "Why don't investors ever get lost? Because they always know where their portfolio is.",
+    "I told my bank I wanted to check my balance. They pushed me off a ledger.",
+    "What's the difference between a bond and a bond trader? A bond matures.",
+    "Why did the financial adviser lose his job? Too many clients told him to take a hike — at 7% compound interest.",
+    "My money talks. Unfortunately, it only ever says 'goodbye.'",
+    "An economist is an expert who will know tomorrow why the things he predicted yesterday didn't happen today.",
+    "Why is money called dough? Because we all knead it.",
+    "I have enough money to last me the rest of my life — unless I buy something.",
+    "What do you call a bear market that lasts forever? My retirement plan.",
+    "Why did the mutual fund manager go to therapy? Too much exposure.",
+    "I put all my money in an ATM. Now my savings are outstanding.",
+    "A rich man is just a poor man with money. A wise man is just a foolish man who invested early.",
+    "Why do bulls make more money than bears? Because it's easier to charge than to retreat.",
+    "My portfolio is like a fine wine — it gets better with time, but only if I stop touching it.",
+    "What's an investor's favourite movie? Compound Interest — it keeps growing on you.",
+    "Why did the naira go to school? To improve its exchange rate.",
+    "I tried day trading once. Now I day dream about when I had money.",
+    "Why do investors make terrible comedians? Their timing is always off.",
+    "What's the best investment advice? Time in the market beats timing the market — and also, don't panic at 3 AM.",
+    "Why did the dividend investor smile every quarter? Because good things come to those who wait.",
+    "What did the patient investor say to the market? 'I'll be here when you get back.'",
+    "Why do index funds tell great jokes? Because they always track the punchline.",
+    "Money can't buy happiness — but it can buy a portfolio that grows, and that's basically the same thing.",
+    "What's the difference between saving and investing? About 10% per year compounded."
+  ];
+
+  const motivationalQuotes = [
+    "Keep pushing. Keep investing. Every naira you plant today is a tree of wealth you'll sit under tomorrow.",
+    "Wealth is built in decades, not days. Stay the course — your consistency is your superpower.",
+    "The best time to invest was yesterday. The second best time is right now. Don't wait for perfect.",
+    "Every naira contributed is a soldier in your financial army. Keep sending reinforcements.",
+    "Discipline today creates freedom tomorrow. Your future self will thank you for starting.",
+    "You don't need to be wealthy to invest. You invest to become wealthy.",
+    "Markets go up and down. Your commitment to the journey is what makes the difference.",
+    "Small consistent contributions beat sporadic large ones. Steady wins the race.",
+    "The road to financial freedom is paved with patience, persistence, and monthly contributions.",
+    "Don't watch the market every day — watch your habits. That's where wealth is truly built.",
+    "Investing is not about being rich. It's about not being poor when it matters most.",
+    "The gap between where you are and where you want to be is called consistency.",
+    "Every investor who ever succeeded had one thing in common — they didn't quit.",
+    "Your future doesn't care about your excuses. Start today, however small."
+  ];
+
+  // ─── Dividend Calculator ──────────────────────────────────────────────────────
+  let divState = { principal: 10000000, rate: 4, growth: 12 };
+  let lastPortfolioValue = 0; // updated by investment calc render
+
+  const divEls = {
+    principalInput:  document.getElementById('divPrincipalInput'),
+    principalSlider: document.getElementById('divPrincipalSlider'),
+    principalFill:   document.getElementById('divPrincipalFill'),
+    rateInput:       document.getElementById('divRateInput'),
+    rateSlider:      document.getElementById('divRateSlider'),
+    rateFill:        document.getElementById('divRateFill'),
+    growthInput:     document.getElementById('divGrowthInput'),
+    growthSlider:    document.getElementById('divGrowthSlider'),
+    growthFill:      document.getElementById('divGrowthFill'),
+    annual:          document.getElementById('divAnnual'),
+    monthly:         document.getElementById('divMonthly'),
+    quarterly:       document.getElementById('divQuarterly'),
+    weekly:          document.getElementById('divWeekly'),
+    sustainBadge:    document.getElementById('sustainBadge'),
+    sustainBar:      document.getElementById('sustainBar'),
+    sustainNote:     document.getElementById('sustainNote'),
+    usePortfolioBtn: document.getElementById('usePortfolioBtn'),
+  };
+
+  function renderDiv() {
+    const { principal, rate, growth } = divState;
+    const annual    = principal * (rate / 100);
+    const monthly   = annual / 12;
+    const quarterly = annual / 4;
+    const weekly    = annual / 52;
+
+    divEls.annual.textContent    = fmt(annual);
+    divEls.monthly.textContent   = fmt(monthly);
+    divEls.quarterly.textContent = fmt(quarterly);
+    divEls.weekly.textContent    = fmt(weekly);
+
+    // Sustainability: compare withdrawal rate vs growth rate
+    const net = growth - rate; // positive = portfolio growing, negative = depleting
+    const badge   = divEls.sustainBadge;
+    const bar     = divEls.sustainBar;
+    const note    = divEls.sustainNote;
+
+    if (net > 2) {
+      badge.className = 'sustain-badge safe';
+      badge.textContent = 'Sustainable';
+      bar.style.background = '#10b981';
+      bar.style.width = Math.min(100, (net / growth) * 100) + '%';
+      note.textContent = `Your portfolio grows at ${growth}% but you only withdraw ${rate}% — a net gain of ${net.toFixed(1)}% per year. Your wealth is still growing while you draw income. This is the ideal zone.`;
+    } else if (net >= -2 && net <= 2) {
+      badge.className = 'sustain-badge caution';
+      badge.textContent = 'Break-even';
+      bar.style.background = '#f59e0b';
+      bar.style.width = '50%';
+      note.textContent = `Withdrawal rate (${rate}%) ≈ growth rate (${growth}%). Your portfolio stays roughly flat — you are living off the income without eating into principal. Sustainable indefinitely if returns hold.`;
+    } else {
+      badge.className = 'sustain-badge danger';
+      badge.textContent = 'Depleting';
+      bar.style.background = '#ef4444';
+      const depletePct = Math.min(100, (Math.abs(net) / rate) * 100);
+      bar.style.width = depletePct + '%';
+      const yearsLeft = Math.round(100 / Math.abs(net));
+      const yDisplay  = isFinite(yearsLeft) && yearsLeft > 0 ? yearsLeft + ' years' : '—';
+      note.textContent = `You withdraw ${rate}% but only earn ${growth}% — the portfolio shrinks by ${Math.abs(net).toFixed(1)}% per year. At this rate, the portfolio depletes in approximately ${yDisplay}. Consider reducing withdrawals or growing the portfolio further first.`;
+    }
+  }
+
+  function wireDivSlider(slider, fill, input, key, isFloat, noUpperClamp) {
+    slider.addEventListener('input', () => {
+      const v = parseFloat(slider.value);
+      divState[key] = v;
+      input.value = isFloat ? v : fmtInput(v);
+      updateFill(slider, fill);
+      renderDiv();
+    });
+    input.addEventListener('input', () => {
+      const raw = parseVal(input.value);
+      const min  = parseFloat(slider.min);
+      const max  = parseFloat(slider.max);
+      const sv   = noUpperClamp ? Math.max(raw, min) : Math.min(Math.max(raw, min), max);
+      divState[key] = sv;
+      slider.value  = Math.min(sv, max);
+      updateFill(slider, fill);
+      renderDiv();
+    });
+    input.addEventListener('blur', () => {
+      if (!isFloat) input.value = fmtInput(divState[key]);
+      else input.value = divState[key];
+    });
+    updateFill(slider, fill);
+  }
+
+  wireDivSlider(divEls.principalSlider, divEls.principalFill, divEls.principalInput, 'principal', false, true);
+  wireDivSlider(divEls.rateSlider,      divEls.rateFill,      divEls.rateInput,      'rate',      true,  true);
+  wireDivSlider(divEls.growthSlider,    divEls.growthFill,    divEls.growthInput,    'growth',    true,  true);
+
+  // "Use my portfolio value" button
+  divEls.usePortfolioBtn.addEventListener('click', () => {
+    if (!lastPortfolioValue) return;
+    divState.principal = lastPortfolioValue;
+    divEls.principalInput.value  = fmtInput(lastPortfolioValue);
+    const maxSlider = parseFloat(divEls.principalSlider.max);
+    divEls.principalSlider.value = Math.min(lastPortfolioValue, maxSlider);
+    updateFill(divEls.principalSlider, divEls.principalFill);
+    renderDiv();
+    document.getElementById('divPrincipalInput').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
+
+  // Store last portfolio value whenever investment calc renders
+  const _origRender = render;
+  render = function() {
+    _origRender();
+    const rows = calculate();
+    lastPortfolioValue = rows[rows.length - 1].balance;
+  };
+
+  renderDiv();
+
+  // ─── Day Index helper ──────────────────────────────────────────────────────────
+  function getDayIndex(arr) {
+    const now = new Date();
+    const dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000);
+    return dayOfYear % arr.length;
+  }
+
+  document.getElementById('jokeText').textContent      = jokes[getDayIndex(jokes)];
+  document.getElementById('motivationalText').textContent = motivationalQuotes[getDayIndex(motivationalQuotes)];
+
+  // ─── Initial render ───────────────────────────────────────────────────────────
+  render();
+</script>
+</body>
+</html>
