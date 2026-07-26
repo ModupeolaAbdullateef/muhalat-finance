@@ -720,6 +720,62 @@
       line-height: 1.5;
     }
 
+    /* ─── Portfolio Projection ─── */
+    .projection-wrap {
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      padding: 18px 20px;
+      margin-top: 12px;
+    }
+    .projection-title {
+      font-size: .72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+    .projection-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+    }
+    .proj-card {
+      border-radius: 10px;
+      padding: 14px 10px;
+      text-align: center;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      transition: transform .15s;
+    }
+    .proj-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+    .proj-year {
+      font-size: .68rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .09em;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .proj-value {
+      font-size: .95rem;
+      font-weight: 800;
+      color: var(--text);
+      word-break: break-word;
+    }
+    .proj-change {
+      font-size: .68rem;
+      font-weight: 600;
+      margin-top: 4px;
+      border-radius: 10px;
+      padding: 2px 7px;
+      display: inline-block;
+    }
+    .proj-change.up   { background: #d1fae5; color: #065f46; }
+    .proj-change.down { background: #fee2e2; color: #991b1b; }
+    .proj-change.flat { background: #e0f2fe; color: #0369a1; }
+    @media (max-width: 480px) { .projection-grid { grid-template-columns: 1fr; } }
+
     /* ─── Motivational Quote ─── */
     .motivational-banner {
       background: linear-gradient(135deg, #1dbf73 0%, #17a362 50%, #0f7a48 100%);
@@ -812,9 +868,9 @@
         </div>
         <div class="slider-track">
           <div class="fill" id="initialFill"></div>
-          <input type="range" id="initialSlider" min="0" max="10000000" step="50000" value="500000" />
+          <input type="range" id="initialSlider" min="0" max="10000000000" step="5000000" value="500000" />
         </div>
-        <div class="slider-labels"><span>₦0</span><span>₦10M</span></div>
+        <div class="slider-labels"><span>₦0</span><span>₦10B</span></div>
       </div>
 
       <!-- Monthly Contribution -->
@@ -1060,6 +1116,28 @@
           <div class="sustain-bar-fill" id="sustainBar" style="width:0%;"></div>
         </div>
         <div class="sustain-note" id="sustainNote">Enter values above to see your sustainability status.</div>
+      </div>
+
+      <!-- Portfolio Projection at 10 / 20 / 30 years -->
+      <div class="projection-wrap">
+        <div class="projection-title">Portfolio Value Projection (at these rates)</div>
+        <div class="projection-grid">
+          <div class="proj-card">
+            <div class="proj-year">10 Years</div>
+            <div class="proj-value" id="proj10">—</div>
+            <div class="proj-change" id="proj10chg"></div>
+          </div>
+          <div class="proj-card">
+            <div class="proj-year">20 Years</div>
+            <div class="proj-value" id="proj20">—</div>
+            <div class="proj-change" id="proj20chg"></div>
+          </div>
+          <div class="proj-card">
+            <div class="proj-year">30 Years</div>
+            <div class="proj-value" id="proj30">—</div>
+            <div class="proj-change" id="proj30chg"></div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -1341,7 +1419,7 @@
     updateFill(slider, fill);
   }
 
-  wireSliderAndInput(els.initialSlider,  els.initialFill,  els.initialInput,  'initial',  false, false);
+  wireSliderAndInput(els.initialSlider,  els.initialFill,  els.initialInput,  'initial',  false, true);
   wireSliderAndInput(els.monthlySlider,  els.monthlyFill,  els.monthlyInput,  'monthly',  false, false);
   wireSliderAndInput(els.yearsSlider,    els.yearsFill,    els.yearsInput,    'years',    false, false);
   wireSliderAndInput(els.rateSlider,     els.rateFill,     els.rateInput,     'rate',     true,  true);
@@ -1438,6 +1516,12 @@
     sustainBar:      document.getElementById('sustainBar'),
     sustainNote:     document.getElementById('sustainNote'),
     usePortfolioBtn: document.getElementById('usePortfolioBtn'),
+    proj10:          document.getElementById('proj10'),
+    proj20:          document.getElementById('proj20'),
+    proj30:          document.getElementById('proj30'),
+    proj10chg:       document.getElementById('proj10chg'),
+    proj20chg:       document.getElementById('proj20chg'),
+    proj30chg:       document.getElementById('proj30chg'),
   };
 
   function renderDiv() {
@@ -1480,6 +1564,26 @@
       const yDisplay  = isFinite(yearsLeft) && yearsLeft > 0 ? yearsLeft + ' years' : '—';
       note.textContent = `You withdraw ${rate}% but only earn ${growth}% — the portfolio shrinks by ${Math.abs(net).toFixed(1)}% per year. At this rate, the portfolio depletes in approximately ${yDisplay}. Consider reducing withdrawals or growing the portfolio further first.`;
     }
+
+    // ── Portfolio projections at 10 / 20 / 30 years ──
+    const netRate = (growth - rate) / 100;
+    [10, 20, 30].forEach(yrs => {
+      const futureVal  = principal * Math.pow(1 + netRate, yrs);
+      const changePct  = ((futureVal - principal) / principal * 100);
+      const valEl      = divEls['proj' + yrs];
+      const chgEl      = divEls['proj' + yrs + 'chg'];
+      valEl.textContent = fmt(Math.max(0, futureVal));
+      if (Math.abs(changePct) < 0.5) {
+        chgEl.textContent  = 'flat';
+        chgEl.className    = 'proj-change flat';
+      } else if (changePct > 0) {
+        chgEl.textContent  = '+' + changePct.toFixed(0) + '%';
+        chgEl.className    = 'proj-change up';
+      } else {
+        chgEl.textContent  = changePct.toFixed(0) + '%';
+        chgEl.className    = 'proj-change down';
+      }
+    });
   }
 
   function wireDivSlider(slider, fill, input, key, isFloat, noUpperClamp) {
