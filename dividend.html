@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Muhalat Finance | Dividend Calculator</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --teal:        #0d9488;
+      --teal-dark:   #0f766e;
+      --teal-light:  #ccfbf1;
+      --teal-mid:    #2dd4bf;
+      --navy:        #0f2137;
+      --navy-mid:    #1a3250;
+      --text:        #1a2634;
+      --muted:       #6b7c93;
+      --border:      #d6e4f0;
+      --bg:          #f4faf9;
+      --card:        #ffffff;
+      --radius:      14px;
+      --shadow:      0 4px 24px rgba(15,33,55,.08);
+      --transition:  .2s ease;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ─── Nav ─── */
+    nav {
+      background: var(--navy);
+      padding: 0 28px;
+      display: flex;
+      align-items: center;
+      height: 52px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 12px rgba(0,0,0,.25);
+      gap: 0;
+      overflow-x: auto;
+    }
+    .nav-logo {
+      font-size: .85rem;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -.01em;
+      margin-right: auto;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .nav-logo span { color: var(--teal-mid); }
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 13px;
+      height: 100%;
+      font-size: .78rem;
+      font-weight: 600;
+      color: rgba(255,255,255,.6);
+      text-decoration: none;
+      border-bottom: 2px solid transparent;
+      transition: color .15s, border-color .15s;
+      white-space: nowrap;
+    }
+    .nav-link:hover { color: #fff; }
+    .nav-link.active { color: var(--teal-mid); border-bottom-color: var(--teal-mid); }
+
+    /* ─── Header ─── */
+    header {
+      background: linear-gradient(135deg, #022c22 0%, #065f46 55%, #0d9488 100%);
+      color: #fff;
+      padding: 52px 24px 68px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    header::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 30% 60%, rgba(45,212,191,.15) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    header::after {
+      content: '';
+      position: absolute;
+      bottom: -2px; left: 0; right: 0;
+      height: 44px;
+      background: var(--bg);
+      border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+    }
+    .header-badge {
+      display: inline-block;
+      background: rgba(13,148,136,.3);
+      color: var(--teal-mid);
+      font-size: .72rem;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      padding: 4px 14px;
+      border-radius: 20px;
+      border: 1px solid rgba(45,212,191,.4);
+      margin-bottom: 16px;
+    }
+    header h1 {
+      font-size: clamp(1.75rem, 4vw, 2.75rem);
+      font-weight: 800;
+      letter-spacing: -.02em;
+      margin-bottom: 12px;
+    }
+    header p {
+      font-size: 1rem;
+      color: rgba(255,255,255,.65);
+      max-width: 520px;
+      margin: 0 auto;
+      line-height: 1.65;
+    }
+
+    /* ─── Main ─── */
+    main {
+      max-width: 1100px;
+      margin: -20px auto 0;
+      padding: 0 20px 64px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ─── Cards ─── */
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 28px;
+    }
+    .card-title {
+      font-size: .68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      color: var(--muted);
+      margin-bottom: 22px;
+    }
+
+    /* ─── Two-col grid ─── */
+    .calc-grid {
+      display: grid;
+      grid-template-columns: 400px 1fr;
+      gap: 24px;
+    }
+    @media (max-width: 840px) { .calc-grid { grid-template-columns: 1fr; } }
+
+    /* ─── Mode Toggle ─── */
+    .mode-toggle {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      background: var(--bg);
+      border-radius: 10px;
+      padding: 4px;
+      margin-bottom: 24px;
+      border: 1px solid var(--border);
+    }
+    .mode-btn {
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      font-size: .82rem;
+      font-weight: 700;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all .2s;
+      text-align: center;
+    }
+    .mode-btn.active {
+      background: #fff;
+      color: var(--teal-dark);
+      box-shadow: 0 2px 8px rgba(0,0,0,.08);
+    }
+
+    /* ─── Input Groups ─── */
+    .input-group { margin-bottom: 22px; }
+    .input-group:last-child { margin-bottom: 0; }
+    .input-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 9px;
+    }
+    .input-label span { font-size: .88rem; font-weight: 600; color: var(--text); }
+    .input-label .tip { font-size: .73rem; color: var(--muted); font-weight: 400; }
+
+    .field-wrap {
+      display: flex;
+      align-items: center;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      background: #fff;
+      overflow: hidden;
+      transition: border-color var(--transition);
+      margin-bottom: 12px;
+    }
+    .field-wrap:focus-within {
+      border-color: var(--teal);
+      box-shadow: 0 0 0 3px rgba(13,148,136,.14);
+    }
+    .field-prefix {
+      padding: 0 14px;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--teal);
+      background: var(--teal-light);
+      align-self: stretch;
+      display: flex;
+      align-items: center;
+      border-right: 2px solid var(--border);
+      user-select: none;
+    }
+    .field-suffix {
+      padding: 0 14px;
+      font-size: .95rem;
+      font-weight: 700;
+      color: var(--muted);
+      background: #f8fafc;
+      align-self: stretch;
+      display: flex;
+      align-items: center;
+      border-left: 2px solid var(--border);
+      user-select: none;
+    }
+    .field-wrap input[type="text"] {
+      flex: 1;
+      border: none;
+      outline: none;
+      padding: 13px 14px;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text);
+      background: transparent;
+      width: 0;
+    }
+
+    /* ─── Slider ─── */
+    .slider-track {
+      position: relative;
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      margin-top: 2px;
+    }
+    .slider-track .fill {
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      background: linear-gradient(90deg, var(--teal-mid), var(--teal));
+      border-radius: 3px;
+      pointer-events: none;
+    }
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 6px;
+      background: transparent;
+      outline: none;
+      cursor: pointer;
+      position: absolute;
+      top: 0; left: 0;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      background: #fff;
+      border: 3px solid var(--teal);
+      box-shadow: 0 2px 8px rgba(13,148,136,.4);
+      margin-top: -8px;
+      transition: transform .15s, box-shadow .15s;
+    }
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.15);
+      box-shadow: 0 4px 14px rgba(13,148,136,.5);
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      background: #fff;
+      border: 3px solid var(--teal);
+      cursor: pointer;
+    }
+    .slider-labels {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 10px;
+      font-size: .71rem;
+      color: var(--muted);
+    }
+
+    /* ─── Payout frequency ─── */
+    .freq-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 7px;
+    }
+    .freq-btn {
+      padding: 9px 4px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      background: #fff;
+      font-size: .75rem;
+      font-weight: 700;
+      color: var(--muted);
+      cursor: pointer;
+      text-align: center;
+      transition: all .15s;
+    }
+    .freq-btn:hover { border-color: var(--teal-mid); color: var(--teal); }
+    .freq-btn.active {
+      border-color: var(--teal);
+      background: var(--teal-light);
+      color: var(--teal-dark);
+    }
+
+    /* ─── Hidden section ─── */
+    .mode-section { display: none; }
+    .mode-section.visible { display: block; }
+
+    /* ─── Results ─── */
+    .result-hero {
+      background: linear-gradient(135deg, #022c22 0%, #065f46 100%);
+      border-radius: 12px;
+      padding: 26px;
+      text-align: center;
+      margin-bottom: 18px;
+    }
+    .rh-label {
+      font-size: .7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: rgba(255,255,255,.5);
+      margin-bottom: 4px;
+    }
+    .rh-value {
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 800;
+      color: var(--teal-mid);
+      letter-spacing: -.03em;
+    }
+    .rh-sub { font-size: .75rem; color: rgba(255,255,255,.4); margin-top: 4px; }
+
+    .payout-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+    @media (max-width: 480px) { .payout-grid { grid-template-columns: 1fr; } }
+
+    .payout-chip {
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      padding: 14px 16px;
+      background: var(--bg);
+    }
+    .pc-label {
+      font-size: .68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .pc-value { font-size: 1.05rem; font-weight: 800; color: var(--text); }
+
+    /* ─── Section Divider ─── */
+    .section-divider {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin: 48px 0 28px;
+    }
+    .section-divider::before,
+    .section-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+    .section-divider-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    .section-icon {
+      width: 40px; height: 40px;
+      background: linear-gradient(135deg, var(--teal), var(--teal-dark));
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      box-shadow: 0 4px 14px rgba(13,148,136,.35);
+    }
+    .section-tag {
+      font-size: .68rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: var(--teal);
+    }
+
+    /* ─── Section Header ─── */
+    .section-head {
+      margin-bottom: 20px;
+    }
+    .section-head h2 {
+      font-size: clamp(1.1rem, 2.5vw, 1.5rem);
+      font-weight: 800;
+      color: var(--navy);
+      letter-spacing: -.02em;
+      margin-bottom: 6px;
+    }
+    .section-head p {
+      font-size: .85rem;
+      color: var(--muted);
+      line-height: 1.6;
+      max-width: 680px;
+    }
+
+    /* ─── Fund Tables ─── */
+    .table-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .table-scroll { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .83rem;
+    }
+    thead th {
+      background: var(--navy);
+      color: #fff;
+      padding: 12px 16px;
+      text-align: left;
+      font-size: .7rem;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    thead th:not(:first-child) { text-align: right; }
+    tbody tr { border-bottom: 1px solid var(--border); }
+    tbody tr:nth-child(even) { background: var(--bg); }
+    tbody tr:last-child { border-bottom: none; }
+    tbody td {
+      padding: 13px 16px;
+      color: var(--text);
+      vertical-align: top;
+    }
+    tbody td:not(:first-child) { text-align: right; }
+
+    .fund-name { font-weight: 700; color: var(--text); margin-bottom: 2px; }
+    .fund-manager { font-size: .75rem; color: var(--muted); }
+
+    .yield-pill {
+      display: inline-block;
+      padding: 3px 9px;
+      border-radius: 12px;
+      font-size: .75rem;
+      font-weight: 700;
+    }
+    .yield-high   { background: #d1fae5; color: #065f46; }
+    .yield-mid    { background: #ccfbf1; color: #0f766e; }
+    .yield-low    { background: #e0f2fe; color: #0369a1; }
+    .yield-na     { background: #f1f5f9; color: #94a3b8; }
+
+    .halal-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: .7rem;
+      font-weight: 700;
+      color: var(--teal-dark);
+      background: var(--teal-light);
+      border-radius: 10px;
+      padding: 2px 8px;
+    }
+
+    /* ─── Disclaimer banner ─── */
+    .disclaimer-banner {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-radius: 10px;
+      padding: 14px 18px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      margin-top: 16px;
+      font-size: .8rem;
+      color: #78350f;
+      line-height: 1.6;
+    }
+    .disclaimer-banner .di { font-size: 1.1rem; flex-shrink: 0; }
+
+    /* ─── Info Banner ─── */
+    .info-banner {
+      background: linear-gradient(135deg, var(--navy) 0%, #1a3e6a 100%);
+      border-radius: var(--radius);
+      padding: 24px 28px;
+      color: #fff;
+      margin-top: 24px;
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+    .info-icon { font-size: 1.7rem; flex-shrink: 0; margin-top: 2px; }
+    .info-banner h3 { font-size: .95rem; font-weight: 700; margin-bottom: 5px; }
+    .info-banner p { font-size: .83rem; color: rgba(255,255,255,.65); line-height: 1.65; }
+
+    /* ─── Footer ─── */
+    footer {
+      background: var(--navy);
+      color: rgba(255,255,255,.45);
+      text-align: center;
+      padding: 26px;
+      font-size: .78rem;
+      margin-top: 48px;
+      line-height: 1.8;
+    }
+    footer strong { color: #fff; }
+    footer a { color: var(--teal-mid); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    @media (max-width: 600px) {
+      header { padding: 40px 20px 58px; }
+      .card { padding: 20px; }
+      .freq-grid { grid-template-columns: repeat(2, 1fr); }
+      .info-banner { flex-direction: column; gap: 10px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a class="nav-logo" href="index.html">Muhalat <span>Finance</span></a>
+  <a class="nav-link" href="index.html">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    Investment
+  </a>
+  <a class="nav-link" href="fixed-income.html">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+    Fixed Income
+  </a>
+  <a class="nav-link active" href="dividend.html">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    Dividend
+  </a>
+</nav>
+
+<!-- HEADER -->
+<header>
+  <div class="header-badge">Muhalat Finance</div>
+  <h1>Muhalat Dividend Calculator</h1>
+  <p>Calculate your dividend income per payout period — by portfolio value or per-unit holding — and explore Halal-screened funds available in Nigeria.</p>
+</header>
+
+<!-- MAIN -->
+<main>
+
+  <!-- ── DIVIDEND CALCULATOR ── -->
+  <div class="calc-grid">
+
+    <!-- Inputs -->
+    <div class="card">
+      <p class="card-title">Your Dividend Details</p>
+
+      <!-- Mode toggle -->
+      <div class="mode-toggle">
+        <button class="mode-btn active" id="modeYield">By Portfolio Value &amp; Yield %</button>
+        <button class="mode-btn" id="modeUnit">By Units &amp; Dividend Per Unit</button>
+      </div>
+
+      <!-- Mode A: Yield % -->
+      <div class="mode-section visible" id="sectionYield">
+        <div class="input-group">
+          <div class="input-label">
+            <span>Portfolio / Investment Value</span>
+            <span class="tip">Total amount held</span>
+          </div>
+          <div class="field-wrap">
+            <span class="field-prefix">₦</span>
+            <input type="text" id="portfolioInput" value="10,000,000" autocomplete="off" />
+          </div>
+          <div class="slider-track">
+            <div class="fill" id="portfolioFill"></div>
+            <input type="range" id="portfolioSlider" min="0" max="500000000" step="500000" value="10000000" />
+          </div>
+          <div class="slider-labels"><span>₦0</span><span>₦500M+</span></div>
+        </div>
+
+        <div class="input-group">
+          <div class="input-label">
+            <span>Annual Dividend Yield</span>
+            <span class="tip">% of portfolio paid out per year</span>
+          </div>
+          <div class="field-wrap">
+            <input type="text" id="yieldInput" value="5" autocomplete="off" style="padding-left:16px;" />
+            <span class="field-suffix">% p.a.</span>
+          </div>
+          <div class="slider-track">
+            <div class="fill" id="yieldFill"></div>
+            <input type="range" id="yieldSlider" min="0.1" max="50" step="0.1" value="5" />
+          </div>
+          <div class="slider-labels"><span>0.1%</span><span>50%+</span></div>
+        </div>
+      </div>
+
+      <!-- Mode B: Per Unit -->
+      <div class="mode-section" id="sectionUnit">
+        <div class="input-group">
+          <div class="input-label">
+            <span>Number of Units / Shares Held</span>
+          </div>
+          <div class="field-wrap">
+            <input type="text" id="unitsInput" value="50,000" autocomplete="off" style="padding-left:16px;" />
+            <span class="field-suffix">units</span>
+          </div>
+          <div class="slider-track">
+            <div class="fill" id="unitsFill"></div>
+            <input type="range" id="unitsSlider" min="1" max="10000000" step="1000" value="50000" />
+          </div>
+          <div class="slider-labels"><span>1</span><span>10M+</span></div>
+        </div>
+
+        <div class="input-group">
+          <div class="input-label">
+            <span>Dividend Per Unit</span>
+            <span class="tip">₦ paid per unit each payout</span>
+          </div>
+          <div class="field-wrap">
+            <span class="field-prefix">₦</span>
+            <input type="text" id="divPerUnitInput" value="2.50" autocomplete="off" />
+          </div>
+          <div class="slider-track">
+            <div class="fill" id="divPerUnitFill"></div>
+            <input type="range" id="divPerUnitSlider" min="0.01" max="100" step="0.01" value="2.50" />
+          </div>
+          <div class="slider-labels"><span>₦0.01</span><span>₦100+</span></div>
+        </div>
+      </div>
+
+      <!-- Payout Frequency -->
+      <div class="input-group" style="margin-top:8px;">
+        <div class="input-label" style="margin-bottom:11px;">
+          <span>Payout Frequency</span>
+          <span class="tip">How often dividends are paid</span>
+        </div>
+        <div class="freq-grid">
+          <button class="freq-btn" data-periods="12">Monthly</button>
+          <button class="freq-btn" data-periods="4">Quarterly</button>
+          <button class="freq-btn active" data-periods="2">Semi-Annual</button>
+          <button class="freq-btn" data-periods="1">Annual</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div class="card">
+      <p class="card-title">Your Dividend Payout</p>
+
+      <div class="result-hero">
+        <div class="rh-label" id="perPeriodLabel">Per Semi-Annual Payout</div>
+        <div class="rh-value" id="perPeriodValue">₦0</div>
+        <div class="rh-sub">gross before any applicable tax</div>
+      </div>
+
+      <div class="payout-grid">
+        <div class="payout-chip">
+          <div class="pc-label">Annual Total</div>
+          <div class="pc-value" id="annualTotal">₦0</div>
+        </div>
+        <div class="payout-chip">
+          <div class="pc-label">Monthly Equivalent</div>
+          <div class="pc-value" id="monthlyEquiv">₦0</div>
+        </div>
+        <div class="payout-chip">
+          <div class="pc-label">5-Year Total</div>
+          <div class="pc-value" id="fiveYearTotal">₦0</div>
+        </div>
+        <div class="payout-chip">
+          <div class="pc-label">10-Year Total</div>
+          <div class="pc-value" id="tenYearTotal">₦0</div>
+        </div>
+      </div>
+
+      <div class="info-banner" style="margin-top:0;">
+        <div class="info-icon">☪️</div>
+        <div>
+          <h3>Why dividends are Halal-friendly</h3>
+          <p>Dividend income represents a share of real business profits — not a fixed predetermined payment on a loan. When the underlying business is Shariah-screened, dividend investing aligns with Islamic finance principles, making it a preferred income strategy for Muslim investors.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ── HALAL MUTUAL FUNDS ── -->
+  <div class="section-divider">
+    <div class="section-divider-inner">
+      <div class="section-icon">📊</div>
+      <div class="section-tag">Shariah-Compliant Equity</div>
+    </div>
+  </div>
+
+  <div class="section-head">
+    <h2>Halal Mutual Funds in Nigeria</h2>
+    <p>These funds invest exclusively in Shariah-screened equities and assets. Returns are distributed as dividends rather than fixed interest, making them suitable for Muslim investors. All figures are indicative based on historical performance — verify current rates with fund managers.</p>
+  </div>
+
+  <div class="table-card">
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Fund</th>
+            <th>Type</th>
+            <th>2021 Return</th>
+            <th>2022 Return</th>
+            <th>2023 Return</th>
+            <th>Payout Freq.</th>
+            <th>Min. Investment</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div class="fund-name">Lotus Halal Equity Fund</div>
+              <div class="fund-manager">Lotus Capital Ltd &nbsp;<span class="halal-badge">☪ Shariah Certified</span></div>
+            </td>
+            <td>Equity</td>
+            <td><span class="yield-pill yield-high">+42.1%</span></td>
+            <td><span class="yield-pill yield-low">−8.3%</span></td>
+            <td><span class="yield-pill yield-high">+35.2%</span></td>
+            <td>Annual</td>
+            <td>₦5,000</td>
+          </tr>
+          <tr>
+            <td>
+              <div class="fund-name">Stanbic IBTC Islamic Fund</div>
+              <div class="fund-manager">Stanbic IBTC Asset Management &nbsp;<span class="halal-badge">☪ Shariah Certified</span></div>
+            </td>
+            <td>Equity</td>
+            <td><span class="yield-pill yield-high">+38.6%</span></td>
+            <td><span class="yield-pill yield-low">−5.9%</span></td>
+            <td><span class="yield-pill yield-high">+29.4%</span></td>
+            <td>Annual</td>
+            <td>₦1,000</td>
+          </tr>
+          <tr>
+            <td>
+              <div class="fund-name">FBN Halal Fund</div>
+              <div class="fund-manager">FBN Quest Asset Management &nbsp;<span class="halal-badge">☪ Shariah Certified</span></div>
+            </td>
+            <td>Equity / Balanced</td>
+            <td><span class="yield-pill yield-mid">+28.4%</span></td>
+            <td><span class="yield-pill yield-low">−4.1%</span></td>
+            <td><span class="yield-pill yield-high">+31.7%</span></td>
+            <td>Annual</td>
+            <td>₦5,000</td>
+          </tr>
+          <tr>
+            <td>
+              <div class="fund-name">Meristem Ethical Fund</div>
+              <div class="fund-manager">Meristem Asset Management &nbsp;<span class="halal-badge">☪ Shariah Screened</span></div>
+            </td>
+            <td>Equity</td>
+            <td><span class="yield-pill yield-mid">+24.7%</span></td>
+            <td><span class="yield-pill yield-low">−6.8%</span></td>
+            <td><span class="yield-pill yield-mid">+22.3%</span></td>
+            <td>Annual</td>
+            <td>₦10,000</td>
+          </tr>
+          <tr>
+            <td>
+              <div class="fund-name">Norrenberger Islamic Fund</div>
+              <div class="fund-manager">Norrenberger Asset Management &nbsp;<span class="halal-badge">☪ Shariah Certified</span></div>
+            </td>
+            <td>Equity / Mixed</td>
+            <td><span class="yield-pill yield-na">N/A</span></td>
+            <td><span class="yield-pill yield-mid">+18.5%</span></td>
+            <td><span class="yield-pill yield-high">+26.9%</span></td>
+            <td>Annual</td>
+            <td>₦10,000</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="disclaimer-banner">
+      <span class="di">⚠️</span>
+      <span>Returns shown are total annual returns (capital growth + dividends) based on publicly reported historical performance. Past returns do not guarantee future results. Negative years reflect market downturns — Shariah-compliant equity funds carry the same market risk as conventional equity funds. Always verify current figures directly with the fund manager before investing.</span>
+    </div>
+  </div>
+
+
+  <!-- ── HALAL FIXED INCOME / SUKUK ── -->
+  <div class="section-divider">
+    <div class="section-divider-inner">
+      <div class="section-icon">🏛️</div>
+      <div class="section-tag">Sukuk &amp; Halal Fixed Income</div>
+    </div>
+  </div>
+
+  <div class="section-head">
+    <h2>Halal Fixed Income Funds &amp; Sukuk in Nigeria</h2>
+    <p>Sukuk are Islamic bonds structured as profit-sharing or lease arrangements (Ijarah) rather than interest-bearing debt. Nigeria's Federal Government has issued Sovereign Sukuk since 2017, and several fund managers offer Shariah-compliant fixed income products.</p>
+  </div>
+
+  <div class="table-card">
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Instrument / Fund</th>
+            <th>Structure</th>
+            <th>Tenor</th>
+            <th>Annual Rental / Return Rate</th>
+            <th>Payout Frequency</th>
+            <th>Issued By</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div class="fund-name">FGN Sovereign Sukuk — 1st Series</div>
+              <div class="fund-manager">2017 &nbsp;<span class="halal-badge">☪ Ijarah Sukuk</span></div>
+            </td>
+            <td>Ijarah (Lease)</td>
+            <td>7 years</td>
+            <td><span class="yield-pill yield-high">16.47%</span></td>
+            <td>Semi-Annual</td>
+            <td>DMO / FGN</td>
+          </tr>
+          <tr>
+            <td>
+              <div class="fund-name">FGN Sovereign Sukuk — 2nd Series</div>
+              <div class="fund-manager">2018 &nbsp;<span class="halal-badge">☪ Ijarah Sukuk</span></div>
+            </td>
+            <td>Ijarah (Lease)</td>
+            <td>7 years</td>
+            <td><span class="yield-pill yield-high">15.74%</span></td>
+            <td>Semi-Annual</td>
+            <td>DMO / FGN</td>
+          </tr>
+          <tr>
+            <td>
+              <div class="fund-name">FGN Sovereign Sukuk — 3rd Series</div>
+              <div class="fund-manager">Sep 2020 &nbsp;<span class="halal-badge">☪ Ijarah Sukuk</span></div>
+            </td>
+            <td>Ijarah (Lease)</td>
+            <td>7 years</td>
+            <td><span class="yield-pill yield-mid">11.20%</span></td>
+            <td>Semi-Annual</td>
+            <td>DMO / FGN</td>
+          </tr>
+          <tr>
+            <td>
+              <div class="fund-name">FGN Sovereign Sukuk — 4th Series</div>
+              <div class="fund-manager">Dec 2020 &nbsp;<span class="halal-badge">☪ Ijarah Sukuk</span></div>
+            </td>
+            <td>Ijarah (Lease)</td>
+            <td>7 years</td>
+            <td><span class="yield-pill yield-mid">11.20%</span></td>
+            <td>Semi-Annual</td>
+            <td>DMO / FGN</td>
+          </tr>
+          <tr>
+            <td>
+              <div class="fund-name">ARM Shariah Fixed Income Fund</div>
+              <div class="fund-manager">ARM Investment Managers &nbsp;<span class="halal-badge">☪ Shariah Certified</span></div>
+            </td>
+            <td>Sukuk / Murabaha</td>
+            <td>Open-ended</td>
+            <td><span class="yield-pill yield-high">~18–22%</span></td>
+            <td>Quarterly</td>
+            <td>ARM Investment Managers</td>
+          </tr>
+          <tr>
+            <td>
+              <div class="fund-name">Lotus Halal Fixed Income Fund</div>
+              <div class="fund-manager">Lotus Capital Ltd &nbsp;<span class="halal-badge">☪ Shariah Certified</span></div>
+            </td>
+            <td>Sukuk / Murabaha</td>
+            <td>Open-ended</td>
+            <td><span class="yield-pill yield-high">~17–21%</span></td>
+            <td>Quarterly</td>
+            <td>Lotus Capital Ltd</td>
+          </tr>
+          <tr>
+            <td>
+              <div class="fund-name">FCMB Halal Fund</div>
+              <div class="fund-manager">FCMB Asset Management &nbsp;<span class="halal-badge">☪ Shariah Screened</span></div>
+            </td>
+            <td>Mixed Sukuk</td>
+            <td>Open-ended</td>
+            <td><span class="yield-pill yield-mid">~15–19%</span></td>
+            <td>Quarterly</td>
+            <td>FCMB Asset Management</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="disclaimer-banner">
+      <span class="di">⚠️</span>
+      <span>FGN Sovereign Sukuk rates are confirmed historical rental rates from DMO public records. Open-ended fund rates (shown as ranges) are indicative based on publicly available information and change with market conditions. Sukuk rental rates are not guaranteed for future issuances. Contact the DMO or relevant fund manager for current prospectus and subscription details.</span>
+    </div>
+  </div>
+
+  <div class="info-banner" style="margin-top:24px;">
+    <div class="info-icon">📌</div>
+    <div>
+      <h3>What makes a fund Halal / Shariah-compliant?</h3>
+      <p>A Shariah-compliant fund avoids companies involved in alcohol, tobacco, gambling, conventional banking (interest-based), pork products, and weapons. A Shariah Advisory Board of Islamic scholars certifies the fund and audits it regularly. Sukuk replace conventional bonds by structuring returns as rental payments or profit-sharing — not as interest on a loan.</p>
+    </div>
+  </div>
+
+</main>
+
+<!-- FOOTER -->
+<footer>
+  <strong>Muhalat Finance</strong> &nbsp;|&nbsp;
+  <a href="index.html">Investment Calculator</a> &nbsp;·&nbsp;
+  <a href="fixed-income.html">Fixed Income</a> &nbsp;·&nbsp;
+  Dividend Calculator
+  <br /><br />
+  Fund data is indicative and sourced from public records. Not financial advice. Verify all figures with the relevant fund manager or the DMO before investing.
+  <br /><br />
+  © Copyright Muhalat Finance 2026. All rights reserved.
+</footer>
+
+<script>
+  // ─── Utilities ────────────────────────────────────────────────────────────────
+  function fmt(n) {
+    if (n >= 1e9) return '₦' + (n / 1e9).toFixed(2) + 'B';
+    if (n >= 1e6) return '₦' + (n / 1e6).toFixed(2) + 'M';
+    if (n >= 1e3) return '₦' + (n / 1e3).toFixed(2) + 'K';
+    return '₦' + n.toFixed(2);
+  }
+  function fmtInput(n) { return n.toLocaleString('en-NG'); }
+  function parseVal(s) { return parseFloat(s.replace(/[^0-9.]/g, '')) || 0; }
+  function updateFill(slider, fill) {
+    const pct = (slider.value - slider.min) / (slider.max - slider.min) * 100;
+    fill.style.width = Math.min(pct, 100) + '%';
+  }
+
+  // ─── State ────────────────────────────────────────────────────────────────────
+  const state = {
+    mode: 'yield',         // 'yield' | 'unit'
+    portfolio: 10000000,
+    yieldPct: 5,
+    units: 50000,
+    divPerUnit: 2.50,
+    periods: 2             // payouts per year
+  };
+
+  // ─── DOM ─────────────────────────────────────────────────────────────────────
+  const $ = id => document.getElementById(id);
+  const periodLabel = {
+    12: 'Monthly Payout',
+    4:  'Quarterly Payout',
+    2:  'Semi-Annual Payout',
+    1:  'Annual Payout'
+  };
+
+  // ─── Render ──────────────────────────────────────────────────────────────────
+  function render() {
+    let annual = 0;
+    if (state.mode === 'yield') {
+      annual = state.portfolio * (state.yieldPct / 100);
+    } else {
+      annual = state.units * state.divPerUnit * state.periods;
+    }
+
+    const perPeriod = annual / state.periods;
+
+    $('perPeriodLabel').textContent = periodLabel[state.periods];
+    $('perPeriodValue').textContent = fmt(perPeriod);
+    $('annualTotal').textContent    = fmt(annual);
+    $('monthlyEquiv').textContent   = fmt(annual / 12);
+    $('fiveYearTotal').textContent  = fmt(annual * 5);
+    $('tenYearTotal').textContent   = fmt(annual * 10);
+  }
+
+  // ─── Slider wiring ────────────────────────────────────────────────────────────
+  function wire(sliderId, fillId, inputId, key, isFloat, noUpperClamp) {
+    const slider = $(sliderId), fill = $(fillId), input = $(inputId);
+    if (!slider) return;
+    slider.addEventListener('input', () => {
+      const v = parseFloat(slider.value);
+      state[key] = v;
+      input.value = isFloat ? v : fmtInput(v);
+      updateFill(slider, fill);
+      render();
+    });
+    input.addEventListener('input', () => {
+      const raw = parseVal(input.value);
+      const min = parseFloat(slider.min), max = parseFloat(slider.max);
+      const sv  = noUpperClamp ? Math.max(raw, min) : Math.min(Math.max(raw, min), max);
+      state[key] = sv;
+      slider.value = Math.min(sv, max);
+      updateFill(slider, fill);
+      render();
+    });
+    input.addEventListener('blur', () => {
+      if (!isFloat) input.value = fmtInput(state[key]);
+      else input.value = state[key];
+    });
+    updateFill(slider, fill);
+  }
+
+  wire('portfolioSlider',  'portfolioFill',  'portfolioInput',  'portfolio',  false, true);
+  wire('yieldSlider',      'yieldFill',      'yieldInput',      'yieldPct',   true,  true);
+  wire('unitsSlider',      'unitsFill',      'unitsInput',      'units',      false, true);
+  wire('divPerUnitSlider', 'divPerUnitFill', 'divPerUnitInput', 'divPerUnit', true,  true);
+
+  // ─── Mode toggle ─────────────────────────────────────────────────────────────
+  $('modeYield').addEventListener('click', () => {
+    state.mode = 'yield';
+    $('modeYield').classList.add('active');
+    $('modeUnit').classList.remove('active');
+    $('sectionYield').classList.add('visible');
+    $('sectionUnit').classList.remove('visible');
+    render();
+  });
+  $('modeUnit').addEventListener('click', () => {
+    state.mode = 'unit';
+    $('modeUnit').classList.add('active');
+    $('modeYield').classList.remove('active');
+    $('sectionUnit').classList.add('visible');
+    $('sectionYield').classList.remove('visible');
+    render();
+  });
+
+  // ─── Payout frequency ────────────────────────────────────────────────────────
+  document.querySelectorAll('.freq-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.freq-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.periods = parseInt(btn.dataset.periods);
+      render();
+    });
+  });
+
+  // ─── Init ────────────────────────────────────────────────────────────────────
+  render();
+</script>
+</body>
+</html>
