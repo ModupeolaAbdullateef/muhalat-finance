@@ -503,6 +503,123 @@
     }
     footer strong { color: #fff; }
 
+    /* ─── DRIP Toggle ─── */
+    .drip-section {
+      border-top: 1px solid var(--border);
+      padding-top: 20px;
+      margin-top: 8px;
+    }
+    .drip-toggle-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 0;
+    }
+    .drip-toggle-text { flex: 1; }
+    .drip-toggle-text strong {
+      display: block;
+      font-size: .9rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 2px;
+    }
+    .drip-toggle-text span {
+      font-size: .72rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    .toggle-switch {
+      position: relative;
+      width: 46px;
+      height: 26px;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .toggle-slider {
+      position: absolute;
+      inset: 0;
+      background: var(--border);
+      border-radius: 26px;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    .toggle-slider::before {
+      content: '';
+      position: absolute;
+      width: 20px; height: 20px;
+      left: 3px; top: 3px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform .2s;
+      box-shadow: 0 1px 4px rgba(0,0,0,.22);
+    }
+    .toggle-switch input:checked + .toggle-slider { background: var(--green); }
+    .toggle-switch input:checked + .toggle-slider::before { transform: translateX(20px); }
+
+    .drip-yield-wrap {
+      display: none;
+      margin-top: 18px;
+    }
+    .drip-yield-wrap.visible { display: block; }
+
+    /* DRIP mode pills */
+    .drip-mode-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .drip-mode-btn {
+      flex: 1;
+      padding: 7px 8px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg);
+      color: var(--muted);
+      font-size: .78rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .15s;
+      font-family: inherit;
+    }
+    .drip-mode-btn.active {
+      border-color: var(--green);
+      color: var(--green);
+      background: rgba(29,191,115,.08);
+    }
+
+    /* By Share mode fields */
+    .drip-share-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .drip-share-grid .drip-field-label {
+      display: block;
+      font-size: .78rem;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .drip-calc-yield {
+      margin-top: 10px;
+      padding: 10px 14px;
+      background: rgba(29,191,115,.07);
+      border: 1px solid rgba(29,191,115,.25);
+      border-radius: 8px;
+      font-size: .8rem;
+      color: var(--muted);
+    }
+    .drip-calc-yield strong { color: var(--green); }
+
+    /* ─── Dividend result chip ─── */
+    .summary-chip.dividend { border-color: #d97706; display: none; grid-column: 1 / -1; }
+    .summary-chip.dividend.visible { display: block; }
+    .summary-chip.dividend .chip-value { color: #92400e; }
+    .dot-dividend { background: #d97706; }
+
     /* ─── Joke Strip ─── */
     .joke-strip {
       background: linear-gradient(135deg, #fff8e1 0%, #fffde7 100%);
@@ -942,6 +1059,71 @@
           </select>
         </div>
       </div>
+
+      <!-- DRIP Toggle -->
+      <div class="drip-section">
+        <div class="drip-toggle-row">
+          <div class="drip-toggle-text">
+            <strong>Reinvest Dividends (DRIP)</strong>
+            <span>Adds dividends back to your portfolio each year so they compound alongside your capital.</span>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="dripToggle">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <div class="drip-yield-wrap" id="dripYieldWrap">
+          <!-- Mode selector -->
+          <div class="drip-mode-row">
+            <button class="drip-mode-btn active" id="dripModeYieldBtn">By Yield %</button>
+            <button class="drip-mode-btn" id="dripModeShareBtn">By Share Amount</button>
+          </div>
+
+          <!-- Mode A: By Yield % -->
+          <div id="dripYieldMode">
+            <div class="input-group" style="margin-bottom:0">
+              <div class="input-label">
+                <span>Annual Dividend Yield</span>
+                <span class="tip">% of portfolio value paid as dividends per year</span>
+              </div>
+              <div class="field-wrap">
+                <input type="text" id="divYieldInput" value="3" autocomplete="off" style="padding-left:20px;" />
+                <span class="field-suffix">%</span>
+              </div>
+              <div class="slider-track">
+                <div class="fill" id="divYieldFill"></div>
+                <input type="range" id="divYieldSlider" min="0.1" max="20" step="0.1" value="3" />
+              </div>
+              <div class="slider-labels"><span>0.1%</span><span>20%+</span></div>
+            </div>
+          </div>
+
+          <!-- Mode B: By Share Amount -->
+          <div id="dripShareMode" style="display:none">
+            <div class="drip-share-grid">
+              <div>
+                <span class="drip-field-label">Share Price / NAV</span>
+                <div class="field-wrap">
+                  <span class="field-prefix">₦</span>
+                  <input type="text" id="dripSharePriceInput" value="2.50" autocomplete="off" />
+                </div>
+              </div>
+              <div>
+                <span class="drip-field-label">Dividend Per Share</span>
+                <div class="field-wrap">
+                  <span class="field-prefix">₦</span>
+                  <input type="text" id="dripDivPerShareInput" value="0.05" autocomplete="off" />
+                </div>
+              </div>
+            </div>
+            <div class="drip-calc-yield">
+              Calculated annual yield: <strong id="calcYieldValue">2.00%</strong>
+              <span style="font-size:.74rem"> — applied to portfolio value each year</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- RIGHT: Results -->
@@ -962,14 +1144,18 @@
         <div class="amount" id="totalValue">₦0</div>
       </div>
 
-      <div class="summary-row">
+      <div class="summary-row" id="summaryRow">
         <div class="summary-chip invested">
           <div class="chip-label">Total Invested</div>
           <div class="chip-value" id="totalInvested">₦0</div>
         </div>
         <div class="summary-chip earnings">
-          <div class="chip-label">Total Earnings</div>
+          <div class="chip-label" id="earningsLabel">Total Earnings</div>
           <div class="chip-value" id="totalEarnings">₦0</div>
+        </div>
+        <div class="summary-chip dividend" id="dividendChip">
+          <div class="chip-label">Dividend Boost</div>
+          <div class="chip-value" id="totalDividend">₦0</div>
         </div>
       </div>
 
@@ -978,9 +1164,10 @@
         <canvas id="growthChart"></canvas>
       </div>
 
-      <div class="legend">
+      <div class="legend" id="chartLegend">
         <div class="legend-item"><div class="legend-dot dot-invested"></div>Total Invested</div>
-        <div class="legend-item"><div class="legend-dot dot-earnings"></div>Growth Earned</div>
+        <div class="legend-item"><div class="legend-dot dot-earnings"></div>Capital Growth</div>
+        <div class="legend-item" id="dividendLegendItem" style="display:none"><div class="legend-dot dot-dividend"></div>Dividend Boost</div>
       </div>
 
       <!-- Year-by-Year Table Toggle -->
@@ -991,11 +1178,11 @@
         </button>
         <div class="year-table-wrap" id="yearTableWrap">
           <table>
-            <thead>
+            <thead id="yearTableHead">
               <tr>
                 <th>Year</th>
                 <th>Total Invested</th>
-                <th>Growth Earned</th>
+                <th>Capital Growth</th>
                 <th>Portfolio Value</th>
               </tr>
             </thead>
@@ -1243,12 +1430,24 @@
 
   // ─── State ──────────────────────────────────────────────────────────────────
   let state = {
-    initial:   500000,
-    monthly:   50000,
-    years:     20,
-    rate:      12,
-    compound:  12
+    initial:        500000,
+    monthly:        50000,
+    years:          20,
+    rate:           12,
+    compound:       12,
+    drip:           false,
+    dripMode:       'yield',  // 'yield' | 'share'
+    dividendYield:  3,
+    dripSharePrice: 2.50,
+    dripDivPerShare: 0.05
   };
+
+  function getEffectiveDripYield() {
+    if (state.dripMode === 'share' && state.dripSharePrice > 0) {
+      return (state.dripDivPerShare / state.dripSharePrice) * 100;
+    }
+    return state.dividendYield;
+  }
 
   // ─── DOM refs ───────────────────────────────────────────────────────────────
   const els = {
@@ -1281,23 +1480,38 @@
 
   // ─── Calculation ─────────────────────────────────────────────────────────────
   function calculate() {
-    const { initial, monthly, years, rate, compound } = state;
+    const { initial, monthly, years, rate, compound, drip } = state;
+    const divYield = drip ? getEffectiveDripYield() : 0;
     const r = rate / 100 / compound;
     const rows = [];
 
-    let balance  = initial;
-    let invested = initial;
+    // Two parallel balances to isolate the pure dividend boost from capital growth
+    let balance   = initial;  // with DRIP
+    let balNoDrip = initial;  // capital + contributions only
+    let invested  = initial;
 
     for (let yr = 1; yr <= years; yr++) {
+      const balanceAtYearStart = balance;
+
       for (let p = 0; p < compound; p++) {
-        balance = balance * (1 + r) + monthly * (12 / compound);
+        balance   = balance   * (1 + r) + monthly * (12 / compound);
+        balNoDrip = balNoDrip * (1 + r) + monthly * (12 / compound);
       }
+
+      // Annual dividend on start-of-year balance, reinvested
+      if (drip && divYield > 0) {
+        balance += balanceAtYearStart * (divYield / 100);
+      }
+
       invested += monthly * 12;
+
       rows.push({
-        year:     yr,
-        invested: invested,
-        earnings: balance - invested,
-        balance:  balance
+        year:          yr,
+        invested:      invested,
+        capitalGrowth: balNoDrip - invested,
+        dividendBoost: balance - balNoDrip,
+        earnings:      balance - invested,
+        balance:       balance
       });
     }
 
@@ -1319,9 +1533,16 @@
           borderSkipped: false,
         },
         {
-          label: 'Growth Earned',
+          label: 'Capital Growth',
           data: [],
           backgroundColor: '#1dbf73',
+          borderRadius: { topLeft: 4, topRight: 4, bottomLeft: 0, bottomRight: 0 },
+          borderSkipped: false,
+        },
+        {
+          label: 'Dividend Boost',
+          data: [],
+          backgroundColor: '#d97706',
           borderRadius: { topLeft: 4, topRight: 4, bottomLeft: 0, bottomRight: 0 },
           borderSkipped: false,
         }
@@ -1369,11 +1590,30 @@
   function render() {
     const rows = calculate();
     const last = rows[rows.length - 1];
+    const effectiveYield = getEffectiveDripYield();
+    const dripOn = state.drip && effectiveYield > 0;
+
+    // Update calculated yield display in share mode
+    const calcYieldEl = document.getElementById('calcYieldValue');
+    if (calcYieldEl) calcYieldEl.textContent = effectiveYield.toFixed(2) + '%';
 
     // Headlines
     els.totalValue.textContent    = fmt(last.balance);
     els.totalInvested.textContent = fmt(last.invested);
-    els.totalEarnings.textContent = fmt(last.earnings);
+    els.totalEarnings.textContent = fmt(dripOn ? last.capitalGrowth : last.earnings);
+    document.getElementById('earningsLabel').textContent = dripOn ? 'Capital Growth' : 'Total Earnings';
+
+    // Dividend Boost chip
+    const divChip = document.getElementById('dividendChip');
+    const divLegend = document.getElementById('dividendLegendItem');
+    if (dripOn) {
+      document.getElementById('totalDividend').textContent = fmt(last.dividendBoost);
+      divChip.classList.add('visible');
+      divLegend.style.display = '';
+    } else {
+      divChip.classList.remove('visible');
+      divLegend.style.display = 'none';
+    }
 
     // Chart — show up to 25 bars (sample every N years if longer)
     const step = Math.max(1, Math.ceil(rows.length / 25));
@@ -1381,15 +1621,32 @@
 
     chart.data.labels = visible.map(r => 'Yr ' + r.year);
     chart.data.datasets[0].data = visible.map(r => r.invested);
-    chart.data.datasets[1].data = visible.map(r => r.earnings);
+    chart.data.datasets[1].data = visible.map(r => r.capitalGrowth);
+    chart.data.datasets[2].data = visible.map(r => r.dividendBoost);
+
+    // Adjust top border radius: when DRIP is on, green has no top rounding (amber sits above it)
+    chart.data.datasets[1].borderRadius = dripOn
+      ? { topLeft: 0, topRight: 0, bottomLeft: 0, bottomRight: 0 }
+      : { topLeft: 4, topRight: 4, bottomLeft: 0, bottomRight: 0 };
+
     chart.update('none');
 
-    // Table
+    // Table header
+    document.getElementById('yearTableHead').innerHTML = `<tr>
+      <th>Year</th>
+      <th>Total Invested</th>
+      <th>Capital Growth</th>
+      ${dripOn ? '<th>Dividend Boost</th>' : ''}
+      <th>Portfolio Value</th>
+    </tr>`;
+
+    // Table rows
     els.yearTableBody.innerHTML = rows.map(r => `
       <tr>
         <td>Year ${r.year}</td>
         <td>${fmt(r.invested)}</td>
-        <td>${fmt(r.earnings)}</td>
+        <td>${fmt(r.capitalGrowth)}</td>
+        ${dripOn ? `<td>${fmt(r.dividendBoost)}</td>` : ''}
         <td>${fmt(r.balance)}</td>
       </tr>
     `).join('');
@@ -1432,6 +1689,65 @@
     state.compound = parseInt(els.compoundSelect.value);
     render();
   });
+
+  // ─── DRIP toggle & inputs ─────────────────────────────────────────────────────
+  const dripToggle    = document.getElementById('dripToggle');
+  const dripYieldWrap = document.getElementById('dripYieldWrap');
+
+  dripToggle.addEventListener('change', () => {
+    state.drip = dripToggle.checked;
+    dripYieldWrap.classList.toggle('visible', state.drip);
+    render();
+  });
+
+  // Mode toggle buttons
+  const dripModeYieldBtn = document.getElementById('dripModeYieldBtn');
+  const dripModeShareBtn = document.getElementById('dripModeShareBtn');
+  const dripYieldMode    = document.getElementById('dripYieldMode');
+  const dripShareMode    = document.getElementById('dripShareMode');
+
+  dripModeYieldBtn.addEventListener('click', () => {
+    state.dripMode = 'yield';
+    dripModeYieldBtn.classList.add('active');
+    dripModeShareBtn.classList.remove('active');
+    dripYieldMode.style.display = '';
+    dripShareMode.style.display = 'none';
+    render();
+  });
+
+  dripModeShareBtn.addEventListener('click', () => {
+    state.dripMode = 'share';
+    dripModeShareBtn.classList.add('active');
+    dripModeYieldBtn.classList.remove('active');
+    dripShareMode.style.display = '';
+    dripYieldMode.style.display = 'none';
+    render();
+  });
+
+  // Yield % mode — slider + text input (noUpperClamp so user can type >20%)
+  wireSliderAndInput(
+    document.getElementById('divYieldSlider'),
+    document.getElementById('divYieldFill'),
+    document.getElementById('divYieldInput'),
+    'dividendYield', true, true
+  );
+
+  // Share amount mode — two plain text inputs (no slider needed for precise values)
+  function wireDripField(inputEl, key) {
+    inputEl.addEventListener('input', () => {
+      const v = parseVal(inputEl.value);
+      state[key] = Math.max(v, 0);
+      render();
+    });
+    inputEl.addEventListener('blur', () => {
+      inputEl.value = state[key];
+    });
+  }
+  wireDripField(document.getElementById('dripSharePriceInput'),   'dripSharePrice');
+  wireDripField(document.getElementById('dripDivPerShareInput'),  'dripDivPerShare');
+
+  // Initialise fill for yield slider
+  updateFill(document.getElementById('divYieldSlider'), document.getElementById('divYieldFill'));
 
   // ─── Table toggle ─────────────────────────────────────────────────────────────
   els.tableToggle.addEventListener('click', () => {
