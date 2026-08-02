@@ -331,6 +331,34 @@
     .mode-section { display: none; }
     .mode-section.visible { display: block; }
 
+    /* ─── Derived / calculated field ─── */
+    .derived-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%);
+      border: 2px solid var(--teal-mid);
+      border-radius: 10px;
+      padding: 12px 16px;
+    }
+    .derived-icon {
+      font-size: 1.1rem;
+      font-weight: 900;
+      color: var(--teal-dark);
+      flex-shrink: 0;
+    }
+    .derived-value {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: var(--teal-dark);
+      flex: 1;
+    }
+    .derived-label {
+      font-size: .8rem;
+      font-weight: 600;
+      color: var(--teal);
+    }
+
     /* ─── Results ─── */
     .result-hero {
       background: linear-gradient(135deg, #022c22 0%, #065f46 100%);
@@ -630,25 +658,59 @@
 
       <!-- Mode B: Per Unit -->
       <div class="mode-section" id="sectionUnit">
+
+        <!-- Portfolio value for unit mode -->
         <div class="input-group">
           <div class="input-label">
-            <span>Number of Units / Shares Held</span>
+            <span>Total Portfolio Value</span>
+            <span class="tip">Amount invested in this holding</span>
           </div>
           <div class="field-wrap">
-            <input type="text" id="unitsInput" value="50,000" autocomplete="off" style="padding-left:16px;" />
-            <span class="field-suffix">units</span>
+            <span class="field-prefix">₦</span>
+            <input type="text" id="unitPortfolioInput" value="10,000,000" autocomplete="off" />
           </div>
           <div class="slider-track">
-            <div class="fill" id="unitsFill"></div>
-            <input type="range" id="unitsSlider" min="1" max="10000000" step="1000" value="50000" />
+            <div class="fill" id="unitPortfolioFill"></div>
+            <input type="range" id="unitPortfolioSlider" min="0" max="500000000" step="100000" value="10000000" />
           </div>
-          <div class="slider-labels"><span>1</span><span>10M+</span></div>
+          <div class="slider-labels"><span>₦0</span><span>₦500M+</span></div>
         </div>
 
+        <!-- Share / unit price -->
         <div class="input-group">
           <div class="input-label">
-            <span>Dividend Per Unit</span>
-            <span class="tip">₦ paid per unit each payout</span>
+            <span>Share Price / NAV Per Unit</span>
+            <span class="tip">Current price of one unit or share</span>
+          </div>
+          <div class="field-wrap">
+            <span class="field-prefix">₦</span>
+            <input type="text" id="sharePriceInput" value="200" autocomplete="off" />
+          </div>
+          <div class="slider-track">
+            <div class="fill" id="sharePriceFill"></div>
+            <input type="range" id="sharePriceSlider" min="0.01" max="10000" step="0.01" value="200" />
+          </div>
+          <div class="slider-labels"><span>₦0.01</span><span>₦10,000+</span></div>
+        </div>
+
+        <!-- Derived: calculated shares (read-only) -->
+        <div class="input-group">
+          <div class="input-label">
+            <span>Calculated Number of Shares</span>
+            <span class="tip">Portfolio ÷ Share Price</span>
+          </div>
+          <div class="derived-box">
+            <span class="derived-icon">≈</span>
+            <span class="derived-value" id="derivedUnitsDisplay">50,000</span>
+            <span class="derived-label">units</span>
+          </div>
+        </div>
+
+        <!-- Dividend per unit -->
+        <div class="input-group">
+          <div class="input-label">
+            <span>Dividend Per Share / Unit</span>
+            <span class="tip">₦ paid per share each payout</span>
           </div>
           <div class="field-wrap">
             <span class="field-prefix">₦</span>
@@ -970,7 +1032,8 @@
     mode: 'yield',         // 'yield' | 'unit'
     portfolio: 10000000,
     yieldPct: 5,
-    units: 50000,
+    unitPortfolio: 10000000,
+    sharePrice: 200,
     divPerUnit: 2.50,
     periods: 2             // payouts per year
   };
@@ -990,7 +1053,12 @@
     if (state.mode === 'yield') {
       annual = state.portfolio * (state.yieldPct / 100);
     } else {
-      annual = state.units * state.divPerUnit * state.periods;
+      const derivedUnits = state.sharePrice > 0 ? state.unitPortfolio / state.sharePrice : 0;
+      const displayUnits = derivedUnits >= 1000
+        ? derivedUnits.toLocaleString('en-NG', { maximumFractionDigits: 2 })
+        : derivedUnits.toFixed(4);
+      $('derivedUnitsDisplay').textContent = displayUnits;
+      annual = derivedUnits * state.divPerUnit * state.periods;
     }
 
     const perPeriod = annual / state.periods;
@@ -1032,8 +1100,9 @@
 
   wire('portfolioSlider',  'portfolioFill',  'portfolioInput',  'portfolio',  false, true);
   wire('yieldSlider',      'yieldFill',      'yieldInput',      'yieldPct',   true,  true);
-  wire('unitsSlider',      'unitsFill',      'unitsInput',      'units',      false, true);
-  wire('divPerUnitSlider', 'divPerUnitFill', 'divPerUnitInput', 'divPerUnit', true,  true);
+  wire('unitPortfolioSlider', 'unitPortfolioFill', 'unitPortfolioInput', 'unitPortfolio', false, true);
+  wire('sharePriceSlider',   'sharePriceFill',   'sharePriceInput',   'sharePrice',    true,  true);
+  wire('divPerUnitSlider',   'divPerUnitFill',   'divPerUnitInput',   'divPerUnit',    true,  true);
 
   // ─── Mode toggle ─────────────────────────────────────────────────────────────
   $('modeYield').addEventListener('click', () => {
